@@ -160,6 +160,23 @@ class CsvValidationTest(ValidatorTestCase):
             (3, "duplicate of line 2 (date must be unique)"),
         )
 
+    def test_time_in_a_day(self):
+        """Hours across categories can't add up to more than a day."""
+        write_csv(
+            self.data,
+            "time.csv",
+            [
+                ["date", "category", "source", "hours"],
+                ["2026-01-05", "work", "calendar", "16"],
+                ["2026-01-05", "family", "calendar", "9.5"],
+                ["2026-01-06", "work", "calendar", "8"],
+            ],
+        )
+        self.assertEqual(
+            self.messages(self.validate(), Severity.ERROR),
+            ["hours: 2026-01-05 adds up to 25.5 across rows, more than 24 in a day"],
+        )
+
     def test_category_checks(self):
         """Plug-in checks run: a night filed under its bedtime date is an error."""
         write_csv(

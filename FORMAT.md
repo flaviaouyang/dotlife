@@ -44,7 +44,7 @@ Format version 1, set as `format_version` in `config.toml`. This file is the sou
 
 Every number is checked in up to three ways:
 
-1. **Hard limits** mark impossible values, like more than 1,440 minutes in a day or a mood of 6. They are part of the format and are errors.
+1. **Hard limits** mark impossible values, like more than 1,440 minutes in a day or a mood of 6. Where a file has a row per item per day (time use, learning), the hours or minutes across a day's rows can't add up to more than a day either. They are part of the format and are errors.
 2. **Plausible bounds** mark unlikely values, like 70,000 steps. They are warnings. Override them in `config.toml`, e.g. `plausible = { steps = [0, 150000] }` under `[activity]`.
 3. **Stale and stuck values.** A value that hasn't changed for `stale_after_days` (set per metric in config) is marked stale. A value that stays flat while its related metrics move beyond their usual range is marked stuck. Both are shown with the date of the last real reading and left out of trends. Nothing is corrected or filled in.
 

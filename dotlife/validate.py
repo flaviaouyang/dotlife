@@ -1,5 +1,6 @@
 import csv
 import json
+from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from datetime import date, timedelta
@@ -24,6 +25,8 @@ from dotlife.schema import (
     row_parser,
 )
 from dotlife.summaries import last_change
+
+DAY_UNITS = ("h", "min")
 
 
 class Severity(StrEnum):
@@ -293,6 +296,31 @@ def duplicate_problem(
     )
 
 
+def day_total_problems(
+    category: Category, totals: Mapping[tuple[str, date], float]
+) -> list[Problem]:
+    """Report days whose time across items adds up to more than a day.
+
+    Args:
+        category: The category.
+        totals: Per (column, date), the sum of that column over the day's items.
+
+    Returns:
+        One error per column and day over the limit, oldest first.
+    """
+    limits = {metric.column: metric.maximum for metric in category.metrics}
+    return [
+        Problem(
+            Severity.ERROR,
+            f"{day.isoformat()} adds up to {total:g} across rows, more than "
+            f"{limits[column]:g} in a day",
+            column=column,
+        )
+        for (column, day), total in sorted(totals.items(), key=lambda item: item[0][1])
+        if total > cast(float, limits[column])
+    ]
+
+
 def validate_csv(category: Category, path: Path, context: Context) -> FileReport:
     """Validate one category's CSV file.
 
@@ -312,6 +340,16 @@ def validate_csv(category: Category, path: Path, context: Context) -> FileReport
     readings: dict[str, list[tuple[date, float]]] = {
         column: [] for column in stale_after
     }
+    day_columns = (
+        [
+            metric.column
+            for metric in category.metrics
+            if metric.unit in DAY_UNITS and metric.maximum is not None
+        ]
+        if len(category.key) > 1
+        else []
+    )
+    totals: dict[tuple[str, date], float] = defaultdict(float)
     with path.open(newline="", encoding="utf-8-sig") as file:
         reader = csv.DictReader(file)
         header = list(reader.fieldnames or [])
@@ -351,6 +389,10 @@ def validate_csv(category: Category, path: Path, context: Context) -> FileReport
             for column, pairs in readings.items():
                 if (value := row.get(column)) is not None:
                     pairs.append((day, cast(float, value)))
+            for column in day_columns:
+                if (value := row.get(column)) is not None:
+                    totals[column, day] += cast(float, value)
+    report.problems += day_total_problems(category, totals)
     if dates:
         report.first_date, report.last_date = min(dates), max(dates)
     if category.expect_every_day:
