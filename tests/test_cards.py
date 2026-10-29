@@ -4,9 +4,12 @@ from pathlib import Path
 from typing import cast
 from zoneinfo import ZoneInfo
 
+import vl_convert
+
 from dotlife.categories import ACTIVITY, BODY
 from dotlife.config import Goal, find_data, goal_for, goal_problems
 from dotlife.dashboard.cards import CardChart, ChartKind, Selection, build_overview
+from dotlife.dashboard.charts import card_chart
 from dotlife.load import load_dataset
 from dotlife.periods import Period
 from dotlife.schema import Context
@@ -111,6 +114,25 @@ class CardChartTest(unittest.TestCase):
         self.assertIsNotNone(steps.usual)
         self.assertEqual(steps.goals[-1], (date(2026, 8, 24), 10000.0))
         self.assertIsNone(cast(CardChart, charts["Mean temperature"]).usual)
+
+
+class CardChartRenderTest(unittest.TestCase):
+    """Every card chart draws, in both views; a valid spec alone isn't enough."""
+
+    def test_all_charts_render(self):
+        """Each chart renders to SVG with Vega, as a browser would draw it."""
+        dataset = load_dataset(find_data(ROOT / "config.toml", ROOT / "sample"))
+        for selection in (
+            Selection(Period.WEEK, date(2026, 8, 24), True),
+            Selection(Period.MONTH, date(2026, 7, 1), True),
+        ):
+            days = (selection.end - selection.start).days
+            for card in build_overview(dataset, selection).cards:
+                if card.chart is None:
+                    continue
+                with self.subTest(period=selection.period, card=card.label):
+                    spec = card_chart(card.chart, card.color, selection.start, days)
+                    self.assertIn("<svg", vl_convert.vegalite_to_svg(spec.to_dict()))
 
 
 if __name__ == "__main__":

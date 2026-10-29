@@ -5,6 +5,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 
+import tomlkit
 from streamlit.testing.v1 import AppTest
 
 from dotlife.config import CONFIG_ENV, DATA_ENV
@@ -24,13 +25,23 @@ class DashboardSmokeTest(unittest.TestCase):
     """Every page renders with the sample data, without exceptions."""
 
     def setUp(self):
-        """Point the dashboard at the repo's config, which falls back to the sample."""
+        """Use a copy of the repo's config without pins, next to the sample.
+
+        The copy keeps the tests independent of whatever the developer has pinned.
+        """
         self.saved = {name: os.environ.get(name) for name in (CONFIG_ENV, DATA_ENV)}
-        os.environ[CONFIG_ENV] = str(ROOT / "config.toml")
+        self.temp = tempfile.TemporaryDirectory()
+        config = Path(self.temp.name) / "config.toml"
+        document = tomlkit.parse((ROOT / "config.toml").read_text(encoding="utf-8"))
+        document["dashboard"]["pinned"] = []
+        config.write_text(tomlkit.dumps(document), encoding="utf-8")
+        shutil.copytree(ROOT / "sample", Path(self.temp.name) / "sample")
+        os.environ[CONFIG_ENV] = str(config)
         os.environ.pop(DATA_ENV, None)
 
     def tearDown(self):
-        """Restore the environment."""
+        """Restore the environment and remove the copy."""
+        self.temp.cleanup()
         for name, value in self.saved.items():
             if value is None:
                 os.environ.pop(name, None)
@@ -77,21 +88,17 @@ class DashboardSmokeTest(unittest.TestCase):
 
     def test_pin_and_unpin(self):
         """Pinning adds a Pinned section and saves it; comments in config survive."""
-        with tempfile.TemporaryDirectory() as folder:
-            config = Path(folder) / "config.toml"
-            shutil.copy(ROOT / "config.toml", config)
-            os.environ[CONFIG_ENV] = str(config)
-            os.environ[DATA_ENV] = str(ROOT / "sample")
-            app = AppTest.from_file(str(APP), default_timeout=30).run()
-            self.assertNotIn("Pinned", [header.value for header in app.subheader])
-            app.button(key="pin-Body and health-activity.steps").click().run()
-            self.assertIn("Pinned", [header.value for header in app.subheader])
-            saved = config.read_text(encoding="utf-8")
-            self.assertIn('pinned = ["activity.steps"]', saved)
-            self.assertIn("# cards shown first on the Overview", saved)
-            app.button(key="pin-pinned-activity.steps").click().run()
-            self.assertNotIn("Pinned", [header.value for header in app.subheader])
-            self.assertIn("pinned = []", config.read_text(encoding="utf-8"))
+        config = Path(os.environ[CONFIG_ENV])
+        app = AppTest.from_file(str(APP), default_timeout=30).run()
+        self.assertNotIn("Pinned", [header.value for header in app.subheader])
+        app.button(key="pin-Body and health-activity.steps").click().run()
+        self.assertIn("Pinned", [header.value for header in app.subheader])
+        saved = config.read_text(encoding="utf-8")
+        self.assertIn('pinned = ["activity.steps"]', saved)
+        self.assertIn("# cards shown first on the Overview", saved)
+        app.button(key="pin-pinned-activity.steps").click().run()
+        self.assertNotIn("Pinned", [header.value for header in app.subheader])
+        self.assertIn("pinned = []", config.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

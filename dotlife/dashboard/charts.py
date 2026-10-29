@@ -199,7 +199,7 @@ def mini_band(usual: tuple[float, float] | None) -> list[alt.Chart]:
     return [
         mini_base(band)
         .mark_rect(opacity=0.12, color="gray")
-        .encode(y="low:Q", y2="high:Q")
+        .encode(y=alt.Y("low:Q", axis=None), y2="high:Q")
     ]
 
 
@@ -411,9 +411,11 @@ def card_chart(
         The chart to show.
     """
     if chart.kind is ChartKind.DOTS:
-        return dots_chart(chart, color)
-    if chart.kind is ChartKind.STACK:
-        return stack_chart(chart)
-    if chart.kind is ChartKind.GRID:
-        return grid_chart(chart, start, days)
-    return series_chart(chart, color)
+        drawn = dots_chart(chart, color)
+    elif chart.kind is ChartKind.STACK:
+        drawn = stack_chart(chart)
+    elif chart.kind is ChartKind.GRID:
+        drawn = grid_chart(chart, start, days)
+    else:
+        drawn = series_chart(chart, color)
+    return drawn.configure_view(strokeWidth=0)
