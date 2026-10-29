@@ -26,6 +26,7 @@ dev = [
     "git-cliff>=2.14.2",
     "pymarkdownlnt>=0.9.41",
     "ruff>=0.17.3",
+    "watchdog>=6.0.0",
 ]
 
 [tool.ruff]
