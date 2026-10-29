@@ -1,10 +1,23 @@
+import re
 import tomllib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from dotlife.schema import Category, Context, Metric
+from dotlife.categories import CATEGORIES
+from dotlife.schema import (
+    DATE,
+    SOURCE,
+    Aggregate,
+    Category,
+    Context,
+    Grain,
+    Metric,
+)
+
+CUSTOM_NAME = re.compile(r"[a-z][a-z0-9_]*")
+BUILT_IN_NAMES = frozenset(category.name for category in CATEGORIES)
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -102,3 +115,78 @@ def related_metrics(metric: Metric, context: Context) -> tuple[str, ...]:
     """
     override = context.options.get("related", {}).get(metric.column)
     return metric.related if override is None else tuple(override)
+
+
+def custom_category(name: str, spec: Mapping[str, Any]) -> Category:
+    """Build a category for a custom metric described in ``[custom.<name>]``.
+
+    Its file is ``<name>.csv`` with the columns ``date``, ``source`` and ``value``.
+
+    Args:
+        name: The metric's name, the key under ``custom``.
+        spec: Its table: ``label``, ``unit`` and ``summary`` are required;
+            ``higher_is_better``, ``minimum``, ``maximum`` and ``plausible`` are
+            optional.
+
+    Returns:
+        The category.
+
+    Raises:
+        ValueError: If the name clashes with a built-in category or isn't
+            lower_snake_case, or the table is missing or misusing a key.
+
+    Example:
+        >>> spec = {"label": "Guitar practice", "unit": "min", "summary": "sum"}
+        >>> custom_category("guitar", spec).file
+        'guitar.csv'
+    """
+    where = f"config.toml: [custom.{name}]"
+    if name in BUILT_IN_NAMES:
+        raise ValueError(f"{where} has the same name as a built-in category")
+    if CUSTOM_NAME.fullmatch(name) is None:
+        raise ValueError(f"{where}: use lower_snake_case names, e.g. guitar_practice")
+    missing = [key for key in ("label", "unit", "summary") if key not in spec]
+    if missing:
+        raise ValueError(f"{where} is missing {', '.join(missing)}")
+    try:
+        summary = Aggregate(spec["summary"])
+    except ValueError as error:
+        choices = ", ".join(aggregate.value for aggregate in Aggregate)
+        raise ValueError(f"{where}: summary must be one of {choices}") from error
+    plausible = spec.get("plausible")
+    metric = Metric(
+        column="value",
+        label=spec["label"],
+        unit=spec["unit"],
+        aggregate=summary,
+        higher_is_better=spec.get("higher_is_better"),
+        minimum=spec.get("minimum"),
+        maximum=spec.get("maximum"),
+        plausible=None if plausible is None else (plausible[0], plausible[1]),
+    )
+    return Category(
+        name=name,
+        label=spec["label"],
+        file=f"{name}.csv",
+        grain=Grain.DAY,
+        fields=(DATE, SOURCE),
+        metrics=(metric,),
+    )
+
+
+def all_categories(config: Mapping[str, Any]) -> tuple[Category, ...]:
+    """Return the built-in categories followed by the user's custom metrics.
+
+    Args:
+        config: The whole of config.toml.
+
+    Returns:
+        Every category dotlife knows about for this config.
+
+    Raises:
+        ValueError: If a custom metric is described wrongly.
+    """
+    custom = config.get("custom", {})
+    return CATEGORIES + tuple(
+        custom_category(name, spec) for name, spec in custom.items()
+    )

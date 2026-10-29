@@ -18,7 +18,9 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `config.py`: reads `config.toml` and gives each category its settings, including overrides of plausible bounds and related metrics.
   - `format_doc.py`: generates the category tables in `FORMAT.md`.
   - `periods.py`: weeks, months and clock-time maths.
-  - `validate.py`, `sample.py`, `sources/`: the validator, the sample generator and the importers.
+  - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
+  - `cli.py` and `__main__.py`: the `dotlife` command.
+  - `sample.py`, `sources/`: the sample generator and the importers.
   - `dashboard/`: Streamlit app. Entry point `app.py`, pages in `app_pages/` via `st.navigation`, theme in `.streamlit/config.toml`. Use the `developing-with-streamlit` skill when changing it.
 - `.agents/skills/`: the `setup-sources` and `sync` skills (`.claude/skills` links here). Write them for any agent: name capabilities ("a health connector"), not one vendor's tools.
 - `docs/sources/`: one guide per data source. People follow them, and the skills read them, so keep them accurate for both.
