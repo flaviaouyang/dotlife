@@ -10,7 +10,7 @@ from dotlife.config import CONFIG_ENV, DATA_ENV, find_data
 from dotlife.validate import format_json, format_text, validate_folder
 
 EXIT_OK, EXIT_ERRORS, EXIT_USAGE = 0, 1, 2
-APP = Path(__file__).resolve().parent / "dashboard" / "app.py"
+APP = Path(__file__).resolve().parent / "dashboard" / "server.py"
 
 
 def add_source_arguments(parser: argparse.ArgumentParser, folder_help: str) -> None:
