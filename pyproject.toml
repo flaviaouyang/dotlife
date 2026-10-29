@@ -1,6 +1,6 @@
 [project]
 name = "dotlife"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "A small life dashboard built on a plain-file data format you own."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,7 +36,7 @@ ban-relative-imports = "all"
 
 [tool.pymarkdown]
 plugins.md013.enabled = false              # one paragraph per line; wide tables
-extensions.front-matter.enabled = true     # SKILL.md front matter
 plugins.md033.allowed_elements = "!--,div,details,summary"  # centered README header, collapsible sections
 plugins.md024.siblings_only = true            # changelog releases repeat "Features" etc.
 plugins.md041.enabled = false              # README opens with a centered block, not a heading
+extensions.front-matter.enabled = true     # SKILL.md front matter
