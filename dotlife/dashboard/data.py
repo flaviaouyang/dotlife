@@ -1,33 +1,14 @@
 import os
-from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 
 import streamlit as st
 
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data
+from dotlife.dashboard.cards import Selection
 from dotlife.load import Dataset, load_dataset
 from dotlife.periods import Period, period_end, period_start
-
-
-@dataclass(frozen=True, slots=True)
-class Selection:
-    """What the sidebar has chosen; every page reads it.
-
-    Attributes:
-        period: Weeks or months.
-        start: First day of the chosen period.
-        show_sensitive: Whether sensitive categories are shown.
-    """
-
-    period: Period
-    start: date
-    show_sensitive: bool
-
-    @property
-    def end(self) -> date:
-        """The day after the chosen period ends."""
-        return period_end(self.start, self.period)
+from dotlife.validate import Report, validate_folder
 
 
 def folder_signature(folder: Path) -> tuple[tuple[str, float], ...]:
@@ -82,6 +63,37 @@ def dataset() -> Dataset:
     return cached_dataset(config_path, data_dir, folder_signature(source.folder))
 
 
+@st.cache_resource(max_entries=2, show_spinner="Checking your data...")
+def cached_report(
+    config_path: str, data_dir: str | None, signature: tuple[tuple[str, float], ...]
+) -> Report:
+    """Validate and cache the data folder; a new signature validates it again.
+
+    Args:
+        config_path: Path to the repo's config.toml.
+        data_dir: The data folder given on the command line, or None.
+        signature: The folder's fingerprint, part of the cache key only.
+
+    Returns:
+        The validator's report.
+    """
+    folder = None if data_dir is None else Path(data_dir)
+    source = find_data(Path(config_path), folder)
+    return validate_folder(source.folder, source.config)
+
+
+def report() -> Report:
+    """Return the validator's report for the folder the dashboard shows.
+
+    Returns:
+        The report, rechecked whenever a data file changes.
+    """
+    config_path = os.environ.get(CONFIG_ENV, "config.toml")
+    data_dir = os.environ.get(DATA_ENV)
+    source = find_data(Path(config_path), None if data_dir is None else Path(data_dir))
+    return cached_report(config_path, data_dir, folder_signature(source.folder))
+
+
 def period_starts(first: date, last: date, period: Period) -> list[date]:
     """List the first days of every period from one date to another, latest first.
 
@@ -129,3 +141,27 @@ def selection() -> Selection:
     """
     state = st.session_state
     return Selection(Period(state["period"]), state["start"], state["show_sensitive"])
+
+
+def keep_period() -> None:
+    """Move the chosen date to the start of its period after the period changes.
+
+    Switching from a week to months then shows the month that holds that week.
+    """
+    state = st.session_state
+    if "start" in state:
+        state["start"] = period_start(state["start"], Period(state["period"]))
+
+
+def period_title(chosen: Selection) -> str:
+    """Name the chosen period for a page title.
+
+    Args:
+        chosen: The sidebar selection.
+
+    Returns:
+        E.g. ``Week of 24 August 2026`` or ``August 2026``.
+    """
+    if chosen.period is Period.MONTH:
+        return f"{chosen.start:%B %Y}"
+    return f"Week of {chosen.start.day} {chosen.start:%B %Y}"

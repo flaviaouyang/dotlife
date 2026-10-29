@@ -3,7 +3,7 @@ from functools import partial
 
 import streamlit as st
 
-from dotlife.dashboard.data import dataset, period_label, period_starts
+from dotlife.dashboard.data import dataset, keep_period, period_label, period_starts
 from dotlife.periods import Period
 
 st.set_page_config(
@@ -43,6 +43,7 @@ with st.sidebar:
         required=True,
         format_func=lambda choice: choice.value.title(),
         key="period",
+        on_change=keep_period,
         width="stretch",
     )
     st.selectbox(

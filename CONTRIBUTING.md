@@ -24,7 +24,13 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
   - `cli.py` and `__main__.py`: the `dotlife` command.
   - `sources/`: the importers.
-  - `dashboard/`: Streamlit app. Entry point `app.py`, pages in `app_pages/` via `st.navigation`, theme in `.streamlit/config.toml`. Use the `developing-with-streamlit` skill when changing it.
+  - `dashboard/`: the Streamlit app (`make dashboard`). Use the `developing-with-streamlit` skill when changing it, and keep logic out of the page scripts:
+    - `app.py`: entry point, sidebar (period, period picker, "Show sensitive", sample notice) and `st.navigation`.
+    - `app_pages/`: Overview, Trends, Journal, Data health. Plain scripts that only lay things out.
+    - `data.py`: cached loading and validation, reloaded when a data file changes, and the sidebar selection.
+    - `cards.py`: what each card shows (value, change, chip, usual range, notes), with no Streamlit, so it is testable.
+    - `display.py`: number formatting and the areas cards belong to. `charts.py`: Altair charts built from polars frames.
+    - The design reference is the mockup in `dev/PLAN.md` (M3). The theme is in `.streamlit/config.toml`, which also turns off usage statistics and keeps the server on this computer only.
 - `.agents/skills/`: the `setup-sources` and `sync` skills (`.claude/skills` links here). Write them for any agent: name capabilities ("a health connector"), not one vendor's tools.
 - `docs/sources/`: one guide per data source. People follow them, and the skills read them, so keep them accurate for both.
 - `tests/`: unittest tests (`make test`). Docstring examples run as tests too.

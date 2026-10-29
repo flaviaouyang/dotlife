@@ -87,7 +87,7 @@ Anything else that is one number per day can be added as a custom metric in `con
 ```sh
 make install     # or: uv sync
 make validate    # or: uv run dotlife validate
-make dashboard   # coming soon
+make dashboard   # or: uv run dotlife dashboard
 ```
 
 Until you add your own `data/` folder, both read the sample data: half a year in the life of Alice, the Alice of Alice and Bob, as a cryptographer in London in 2026. It covers every category, with a few gaps and odd values planted so every rule shows up. Every value is made up. Setting up your own sources removes it.
