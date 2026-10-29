@@ -49,4 +49,4 @@ Not yet. Once the format is stable, the most useful contributions will be guides
 
 ## License
 
-To be decided before the first release.
+MIT. See [LICENSE](LICENSE).
