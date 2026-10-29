@@ -48,6 +48,7 @@ def context_for(category: Category, config: Mapping[str, Any]) -> Context:
 
     Returns:
         The user's time zone and the category's config section (empty if absent).
+        When ``track`` lists categories, any other is switched off.
 
     Raises:
         ValueError: If ``timezone`` is missing or not a known IANA time zone.
@@ -61,7 +62,11 @@ def context_for(category: Category, config: Mapping[str, Any]) -> Context:
         raise ValueError(
             f"config.toml: timezone {name!r} is not an IANA time zone name"
         ) from error
-    return Context(timezone=timezone, options=config.get(category.name, {}))
+    options = config.get(category.name, {})
+    track = config.get("track")
+    if track is not None and category.name not in track:
+        options = {**options, "enabled": False}
+    return Context(timezone=timezone, options=options)
 
 
 def plausible_range(metric: Metric, context: Context) -> tuple[float, float] | None:
