@@ -51,50 +51,52 @@ if not selection().show_sensitive:
         "read them, and switch it off again before sharing your screen.",
         title="Hidden",
     )
-    st.stop()
-if not data.reflections:
+elif not data.reflections:
     st.info(
         "Write short reflections in `reflections/2026.txt`, each starting with its "
         "time, like `[2026-03-08 21:30] Long walk after work. #walking`.",
         icon=":material/edit_note:",
     )
-    st.stop()
-
-first, last = data.reflections[0].day, data.reflections[-1].day
-with st.container(horizontal=True, vertical_alignment="bottom"):
-    query = st.text_input(
-        "Search", placeholder="Words to find, e.g. tired walk", icon=":material/search:"
+else:
+    first, last = data.reflections[0].day, data.reflections[-1].day
+    with st.container(horizontal=True, vertical_alignment="bottom"):
+        query = st.text_input(
+            "Search",
+            placeholder="Words to find, e.g. tired walk",
+            icon=":material/search:",
+        )
+        period = st.date_input(
+            "Dates", (first, last), min_value=first, max_value=last, width=260
+        )
+    tags = sorted({tag for reflection in data.reflections for tag in reflection.tags})
+    picked = (
+        st.pills("Tags", tags, selection_mode="multi", label_visibility="collapsed")
+        if tags
+        else []
     )
-    period = st.date_input(
-        "Dates", (first, last), min_value=first, max_value=last, width=260
-    )
-tags = sorted({tag for reflection in data.reflections for tag in reflection.tags})
-picked = (
-    st.pills("Tags", tags, selection_mode="multi", label_visibility="collapsed")
-    if tags
-    else []
-)
 
-words = query.lower().split()
-start, end = (period[0], period[1]) if len(period) == 2 else (first, last)
-hits = [
-    reflection
-    for reflection in data.reflections
-    if start <= reflection.day <= end
-    and all(word in reflection.text.lower() for word in words)
-    and set(picked) <= set(reflection.tags)
-]
-days = [
-    (day, list(group)) for day, group in groupby(reversed(hits), key=lambda r: r.day)
-]
-st.caption(
-    f"{len(hits)} of {len(data.reflections)} entries, on {len(days)} "
-    f"{'day' if len(days) == 1 else 'days'}. Every word must match; case is ignored."
-)
-for day, reflections in days:
-    st.subheader(f"{day:%A, %b} {day.day}, {day.year}", divider="gray")
-    for reflection in sorted(reflections, key=lambda r: r.time):
-        with st.container(border=True):
-            star = " :material/star:" if reflection.starred else ""
-            st.caption(f"{reflection.time:%H:%M}{star}")
-            st.markdown(highlighted(reflection.text, words))
+    words = query.lower().split()
+    start, end = (period[0], period[1]) if len(period) == 2 else (first, last)
+    hits = [
+        reflection
+        for reflection in data.reflections
+        if start <= reflection.day <= end
+        and all(word in reflection.text.lower() for word in words)
+        and set(picked) <= set(reflection.tags)
+    ]
+    days = [
+        (day, list(group))
+        for day, group in groupby(reversed(hits), key=lambda r: r.day)
+    ]
+    st.caption(
+        f"{len(hits)} of {len(data.reflections)} entries, on {len(days)} "
+        f"{'day' if len(days) == 1 else 'days'}. "
+        "Every word must match; case is ignored."
+    )
+    for day, reflections in days:
+        st.subheader(f"{day:%A, %b} {day.day}, {day.year}", divider="gray")
+        for reflection in sorted(reflections, key=lambda r: r.time):
+            with st.container(border=True):
+                star = " :material/star:" if reflection.starred else ""
+                st.caption(f"{reflection.time:%H:%M}{star}")
+                st.markdown(highlighted(reflection.text, words))
