@@ -1,6 +1,9 @@
 <div align="center">
 
-# dotlife
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="dotlife/dashboard/assets/wordmark-dark.svg">
+  <img src="dotlife/dashboard/assets/wordmark-light.svg" alt="dotlife" width="260">
+</picture>
 
 **A small, open-source life dashboard built on plain files you own.**
 
