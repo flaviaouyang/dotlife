@@ -1,26 +1,51 @@
 # dotlife settings: every threshold and personal choice lives here.
-# Hard limits that define the format (e.g. at most 1440 minutes a day) are in the code.
-# A category shows in the dashboard when its file exists in data_dir.
-# Set enabled = false in its section to switch it off everywhere.
+# Hard limits that define the format (e.g. at most 1440 minutes a day) are in the code;
+# FORMAT.md lists them.
 
 format_version = 1
-timezone = "Europe/Berlin"   # IANA name; weeks and wake dates use it
+timezone = "Europe/Berlin"   # IANA name; dates, weeks and wake dates use it
 data_dir = "data"            # falls back to sample/ when this folder is missing
+
+[display]
+weight = "kg"                # "kg" or "lb"; files always store kg
+glucose = "mmol/L"           # "mmol/L" or "mg/dL"; files always store mmol/L
 
 [dashboard]
 period = "week"              # "week" (Monday to Sunday) or "month"
-show_sensitive = false       # sensitive categories stay hidden until switched on in the dashboard
+show_sensitive = false       # sensitive categories stay hidden until shown in the dashboard
+usual_range = { week = 8, month = 6 }   # full periods behind the "usual range" band
+
+# Categories: activity, workouts, sleep, heart, body, fitness_markers, vitals,
+# nutrition, mindfulness, cycle, medication, symptoms, glucose, mood, journal, time,
+# screen_time, tasks, habits, reading, learning, media, finances, events, weather,
+# social, travel.
+#
+# Each shows when its file exists in data_dir. In its section, you can set:
+#   enabled = false                                   switch it off everywhere
+#   plausible = { <column> = [low, high] }            change when a value is a warning
+#   stale_after_days = { <column> = days }            flag a value that stops changing
+#   related = { <column> = ["category.column"] }      metrics for the stuck flag; [] = off
 
 [activity]
-enabled = true
 watch_off_steps = 1000            # a day under both of these counts as "watch not worn"
 watch_off_sedentary_min = 480
-# Values outside a metric's plausible bounds are warnings. Override a bound here,
-# e.g. for ultra-marathon days:
-# plausible = { steps = [0, 150000] }
 
-[sleep]
-enabled = true
+[fitness_markers]
+# Many watches only update VO2 max after an outdoor run with GPS.
+stale_after_days = { vo2max_ml_kg_min = 90 }
 
-[mood]
-enabled = true
+[finances]
+home_currency = "EUR"             # ISO 4217; other currencies are flagged, not converted
+# Monthly budget per category, in home_currency:
+# budgets = { groceries = 400, eating_out = 150, transport = 80 }
+
+# Custom metrics: one table per metric, with its data in <name>.csv
+# (columns date, source, value). See FORMAT.md.
+# [custom.guitar]
+# label = "Guitar practice"
+# unit = "min"
+# summary = "sum"
+# higher_is_better = true
+# minimum = 0
+# maximum = 1440
+# plausible = [0, 180]
