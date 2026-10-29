@@ -31,7 +31,7 @@ The project is early, so most of these don't exist yet. All project code lives i
     - `cards.py`: what each card shows (value, change, chip, usual range, notes), with no Streamlit, so it is testable.
     - `display.py`: number formatting and the areas cards belong to. `charts.py`: Altair charts built from polars frames.
     - The design reference is the mockup in `dev/PLAN.md` (M3). The theme is in `.streamlit/config.toml`, which also turns off usage statistics and keeps the server on this computer only.
-- `.agents/skills/`: the `setup-sources` and `sync` skills (`.claude/skills` links here). Write them for any agent: name capabilities ("a health connector"), not one vendor's tools.
+- `.agents/skills/`: the `setup`, `fetch` and `maintain` skills (`.claude/skills` links here). Write them for any agent: name capabilities ("a health connector"), not one vendor's tools.
 - `docs/sources/`: one guide per data source. People follow them, and the skills read them, so keep them accurate for both.
 - `tests/`: unittest tests (`make test`). Docstring examples run as tests too.
 

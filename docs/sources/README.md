@@ -1,6 +1,6 @@
 # Source guides
 
-One guide per data source: how to get the data out and how it maps to [the format](../../FORMAT.md). dotlife doesn't import anything itself. You, or your agent with the `setup-sources` skill, follow a guide to write a script that fills your files. Use a connector only where no script can reach the data.
+One guide per data source: how to get the data out and how it maps to [the format](../../FORMAT.md). dotlife doesn't import anything itself. You, or your agent with the `setup` skill, follow a guide to write a script that fills your files, and `make fresh` runs it from then on.
 
 | Guide | Fills | Best repeatable route |
 | --- | --- | --- |

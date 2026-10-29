@@ -8,7 +8,7 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 
 - `FORMAT.md`: the data format. It is the source of truth for every file, column, unit and rule. Read it before writing any data file.
 - `config.toml`: the person's settings: time zone, which categories are switched on, thresholds, budgets and custom metrics. Change it only when they ask, and say what changed.
-- `sources.md`: their setup, i.e. which source provides each category, the priority when two sources overlap, and how each is synced (a script or a connector). `setup-sources` writes it, and `sync` follows it.
+- `sources.md`: their setup in plain words: which source provides each category, the priority when two sources overlap, the choices the guides leave to them, and how each source is fetched. `setup` writes it and `maintain` keeps it current. Read it before changing anything.
 - `data/`: their data files, in the format. `sync` writes them.
 - `scripts/`: their own import scripts, written by `setup-sources` for sources that can be scripted.
 - `sample/`: made-up demo data (Alice, of Alice and Bob). The dashboard falls back to it when `data/` doesn't exist. Never write the person's data here. `setup-sources` deletes it at the end of setup.
@@ -17,8 +17,11 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 
 ## Skills and commands
 
-- `setup-sources` (in `.agents/skills/`) finds the person's sources, asks which categories they want, and writes `sources.md` and scripts. Run it again to add or remove a source.
-- `sync` (in `.agents/skills/`) follows `sources.md`, updates `data/` and runs the validator.
+- `uv run dotlife setup`: the questionnaire (what to track, sensitive categories, time zone, devices and apps). It writes `config.toml` and the start of `sources.md`. Deterministic; no agent needed.
+- `setup` (in `.agents/skills/`) continues from those answers: reads the guides in `docs/sources/`, writes the scripts, lists them for `make fresh`, runs it once and deletes `sample/`.
+- `make fresh`: runs every source script in the order `config.toml` lists, then the validator. No agent needed; the person runs it whenever they want fresh data.
+- `fetch` (in `.agents/skills/`): does the steps only an agent can do (connector-only sources and AI inference), then runs `make fresh`.
+- `maintain` (in `.agents/skills/`): for when `make fresh` fails, or to add a source, change a device or change how something works. It updates the scripts, `config.toml` and `sources.md` together.
 - `uv run dotlife validate`: check the files. Fix what it reports at the source or in the import, never by editing values to pass.
 - `uv run dotlife dashboard`: open the dashboard.
 
