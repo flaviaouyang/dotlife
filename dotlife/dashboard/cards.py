@@ -32,6 +32,7 @@ from dotlife.summaries import (
     daily_counts,
     daily_values,
     display_value,
+    flow_by_day,
     last_change,
     notable,
     period_values,
@@ -390,6 +391,8 @@ def spec_daily(spec: CardSpec, dataset: Dataset) -> Daily:
         return clock_by_day(rows, spec.clock_of, context.timezone)
     if spec.column is None:
         return daily_counts(rows)
+    if spec.column == "flow_level":
+        return flow_by_day(rows)
     category = category_named(dataset, spec.category)
     if spec.category != "finances":
         return daily_values(category, rows, spec.column, context)

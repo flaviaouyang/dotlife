@@ -7,7 +7,7 @@ import polars as pl
 
 from dotlife.dashboard.cards import CardChart, ChartKind
 from dotlife.dashboard.display import CLOCK, format_value
-from dotlife.summaries import UsualRange
+from dotlife.summaries import UNRECORDED_FLOW, UsualRange
 
 EVENING_MINUTES = 18 * 60
 CLOCK_LABEL = (
@@ -409,6 +409,38 @@ FLOW_HEX = "#DB2777"
 CELL = 0.8
 
 
+def flow_word(level: float | None) -> str:
+    """Name a day's flow for the cycle strip's tooltip.
+
+    Args:
+        level: The flow level, ``UNRECORDED_FLOW``, or None without a row.
+
+    Returns:
+        A word or two, e.g. "light" or "amount not recorded".
+    """
+    if level is None:
+        return "not recorded"
+    if level == UNRECORDED_FLOW:
+        return "amount not recorded"
+    return FLOW_WORDS.get(round(level), "")
+
+
+def flow_strength(level: float | None) -> float:
+    """Shade a day of the cycle strip: darker for heavier flow.
+
+    Args:
+        level: The flow level, ``UNRECORDED_FLOW``, or None without a row.
+
+    Returns:
+        The square's opacity.
+    """
+    if level is None:
+        return 0.06
+    if level == UNRECORDED_FLOW:
+        return 0.6
+    return 0.18 if level == 0 else 0.35 + 0.65 * level / 3
+
+
 def cycle_chart(chart: CardChart) -> alt.Chart:
     """Draw the last weeks of a cycle as a strip of days, shaded by flow.
 
@@ -429,16 +461,8 @@ def cycle_chart(chart: CardChart) -> alt.Chart:
             "start": [float(index) for index in range(len(days))],
             "end": [index + CELL for index in range(len(days))],
             "date": [f"{day:%a} {day.day} {day:%b}" for day in days],
-            "flow": [
-                "not recorded" if level is None else FLOW_WORDS.get(round(level), "")
-                for level in levels
-            ],
-            "strength": [
-                0.06
-                if level is None
-                else (0.18 if level == 0 else 0.35 + 0.65 * level / 3)
-                for level in levels
-            ],
+            "flow": [flow_word(level) for level in levels],
+            "strength": [flow_strength(level) for level in levels],
         }
     )
     return (

@@ -14,6 +14,7 @@ from dotlife.schema import Aggregate, Category, Context, Row
 
 POUNDS_PER_KG = 2.2046226218
 MG_DL_PER_MMOL_L = 18.0182
+UNRECORDED_FLOW = math.inf
 CONVERSIONS: dict[str, tuple[str, dict[str, float]]] = {
     "kg": ("weight", {"lb": POUNDS_PER_KG}),
     "mmol/L": ("glucose", {"mg/dL": MG_DL_PER_MMOL_L}),
@@ -412,6 +413,32 @@ class CycleStatus:
         if self.typical_length is None:
             return None
         return self.last_start + timedelta(days=self.typical_length)
+
+
+def flow_by_day(rows: Iterable[Row]) -> Daily:
+    """Read flow by date, keeping period days whose amount wasn't recorded.
+
+    A cycle row with an empty ``flow_level`` is a period day of unknown amount. It
+    gets ``UNRECORDED_FLOW``, which counts as flow but is never shown as a level.
+
+    Args:
+        rows: Parsed cycle rows.
+
+    Returns:
+        Flow level by date, for dates with a row.
+
+    Example:
+        >>> rows = [{"date": date(2026, 1, 1), "flow_level": 2.0},
+        ...         {"date": date(2026, 1, 2), "flow_level": None}]
+        >>> flow_by_day(rows)
+        {datetime.date(2026, 1, 1): 2.0, datetime.date(2026, 1, 2): inf}
+    """
+    return {
+        cast(date, row["date"]): UNRECORDED_FLOW
+        if row.get("flow_level") is None
+        else cast(float, row["flow_level"])
+        for row in rows
+    }
 
 
 def period_starts(flow: Mapping[date, float]) -> list[date]:

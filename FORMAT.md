@@ -239,6 +239,8 @@ Config section `[cycle]`. `cycle.csv`, one row per day, unique: `date`, sensitiv
 | `flow_level` | number | 0-3 | no | 0 to 3 |  | days above 0 |  |
 | `bbt_c` | number | °C | no | at least 0 | 35 to 38 | average |  |
 
+- `flow_level`: 0 none, 1 light, 2 medium, 3 heavy. Leave it empty on a period day whose amount wasn't recorded; the row still counts as a period day.
+
 ### Medication
 
 Config section `[medication]`. `medication.csv`, one row per day, unique: `date`, `item`, sensitive.

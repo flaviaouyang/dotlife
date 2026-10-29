@@ -359,7 +359,11 @@ CYCLE = daily(
     "cycle",
     "Menstrual cycle",
     (
-        bounded("flow_level", "Flow", "0-3", (0, 3), DAYS),
+        defined(
+            bounded("flow_level", "Flow", "0-3", (0, 3), DAYS),
+            "0 none, 1 light, 2 medium, 3 heavy. Leave it empty on a period day "
+            "whose amount wasn't recorded; the row still counts as a period day.",
+        ),
         measured("bbt_c", "Basal body temperature", "°C", (35, 38)),
     ),
     sensitive=True,

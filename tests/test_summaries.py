@@ -12,9 +12,11 @@ from dotlife.summaries import (
     UsualRange,
     assess,
     clock_by_day,
+    cycle_status,
     daily_counts,
     daily_values,
     display_value,
+    flow_by_day,
     notable,
     period_values,
     stuck_against,
@@ -244,3 +246,21 @@ class DisplayValueTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CycleTest(unittest.TestCase):
+    """Period days with no recorded amount still start and extend a period."""
+
+    def test_unrecorded_flow_counts_as_a_period_day(self):
+        """An empty flow level is a period day; 0 is a day without one."""
+        levels = {1: 0.0, 2: None, 3: 2.0, 4: None, 5: 0.0}
+        rows = [
+            {"date": date(2026, 1, day), "flow_level": level}
+            for day, level in levels.items()
+        ]
+        status = cycle_status(flow_by_day(rows), date(2026, 1, 10))
+        assert status is not None
+        self.assertEqual(
+            (status.last_start, status.last_end, status.day),
+            (date(2026, 1, 2), date(2026, 1, 4), 9),
+        )
