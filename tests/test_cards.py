@@ -90,6 +90,26 @@ class SampleGoalTextTest(unittest.TestCase):
         self.assertEqual(goals["Active time"], "Goal 11 h 04 m a month: reached")
 
 
+class CycleAndBudgetTest(unittest.TestCase):
+    """The cycle card describes the cycle; spending compares with budgets."""
+
+    def test_cycle_and_budgets_for_august(self):
+        """Day 10 of the cycle; August's budgets as written in the sample config."""
+        dataset = load_dataset(find_data(ROOT / "config.toml", ROOT / "sample"))
+        cards = {
+            card.label: card
+            for card in build_overview(
+                dataset, Selection(Period.MONTH, date(2026, 8, 1), True)
+            ).cards
+        }
+        cycle = cards["Menstrual cycle"]
+        self.assertEqual((cycle.value, cycle.unit), ("Day 10", "of cycle"))
+        self.assertIn("Last period 21 Aug to 25 Aug", cycle.note)
+        self.assertIn("next expected around 18 Sep", cycle.note)
+        self.assertIn("books £43.91 of £40.00 (over)", cards["Spending"].note)
+        self.assertIn("coffee £26.94 of £60.00", cards["Spending"].note)
+
+
 class CardChartTest(unittest.TestCase):
     """Each kind of metric gets the chart that suits it."""
 
@@ -108,7 +128,8 @@ class CardChartTest(unittest.TestCase):
         self.assertEqual(kinds["Bedtime"], ChartKind.DOTS)
         self.assertEqual(kinds["Habit check-ins"], ChartKind.GRID)
         self.assertEqual(kinds["Time tracked"], ChartKind.STACK)
-        self.assertEqual(kinds["Spending"], ChartKind.STACK)
+        self.assertEqual(kinds["Spending"], ChartKind.BUDGET)
+        self.assertEqual(kinds["Menstrual cycle"], ChartKind.CYCLE)
         self.assertIsNone(kinds["VO2 max"])
         steps = cast(CardChart, charts["Steps"])
         self.assertIsNotNone(steps.usual)

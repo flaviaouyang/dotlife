@@ -1,3 +1,4 @@
+import calendar
 import math
 import statistics
 from collections import Counter, defaultdict
@@ -386,3 +387,109 @@ def display_value(
         choices = ", ".join([unit, *factors])
         raise ValueError(f"config.toml: [display] {setting} must be one of {choices}")
     return value * factors[wanted], wanted
+
+
+@dataclass(frozen=True, slots=True)
+class CycleStatus:
+    """Where a menstrual cycle stands on a day.
+
+    Attributes:
+        day: The day of the cycle, counting the first day of the last period as 1.
+        last_start: The first day of the last period.
+        last_end: The last day with flow in that period.
+        typical_length: The median length of recent cycles in days, or None with
+            fewer than two complete cycles recorded.
+    """
+
+    day: int
+    last_start: date
+    last_end: date
+    typical_length: int | None
+
+    @property
+    def next_expected(self) -> date | None:
+        """The day the next period would start if this cycle is typical."""
+        if self.typical_length is None:
+            return None
+        return self.last_start + timedelta(days=self.typical_length)
+
+
+def period_starts(flow: Mapping[date, float]) -> list[date]:
+    """Find the first day of each period: a day with flow after a day without.
+
+    Args:
+        flow: Flow level by date; 0 means none, a missing day means unrecorded.
+
+    Returns:
+        Start dates, oldest first.
+
+    Example:
+        >>> days = [(1, 0), (2, 2), (3, 1), (4, 0), (30, 3)]
+        >>> flow = {date(2026, 1, day): level for day, level in days}
+        >>> period_starts(flow)
+        [datetime.date(2026, 1, 2), datetime.date(2026, 1, 30)]
+    """
+    return [
+        day
+        for day in sorted(flow)
+        if flow[day] > 0 and flow.get(day - timedelta(days=1), 0) == 0
+    ]
+
+
+def cycle_status(
+    flow: Mapping[date, float], on: date, cycles: int = 6
+) -> CycleStatus | None:
+    """Work out the cycle day and the typical cycle length on a day.
+
+    Args:
+        flow: Flow level by date.
+        on: The day to describe.
+        cycles: How many recent cycle lengths the typical length uses.
+
+    Returns:
+        The status, or None when no period starts on or before the day.
+    """
+    starts = [start for start in period_starts(flow) if start <= on]
+    if not starts:
+        return None
+    last = starts[-1]
+    end = last
+    while flow.get(end + timedelta(days=1), 0) > 0:
+        end += timedelta(days=1)
+    lengths = [
+        (later - earlier).days
+        for earlier, later in zip(starts, starts[1:], strict=False)
+    ]
+    typical = round(statistics.median(lengths[-cycles:])) if lengths else None
+    return CycleStatus((on - last).days + 1, last, end, typical)
+
+
+def budget_shares(
+    budgets: Mapping[str, float], start: date, end: date
+) -> dict[str, float]:
+    """Scale monthly budgets to a period, day by day.
+
+    Each day gets its month's budget divided by that month's length, so a week
+    across two months takes a share of each.
+
+    Args:
+        budgets: Monthly budget by spending category.
+        start: The period's first day.
+        end: The day after the period.
+
+    Returns:
+        Budget by category for the period.
+
+    Example:
+        >>> week = (date(2026, 3, 30), date(2026, 4, 6))
+        >>> shares = budget_shares({"coffee": 62.0}, *week)
+        >>> round(shares["coffee"], 2)
+        14.33
+    """
+    days = [start + timedelta(days=offset) for offset in range((end - start).days)]
+    return {
+        category: math.fsum(
+            amount / calendar.monthrange(day.year, day.month)[1] for day in days
+        )
+        for category, amount in budgets.items()
+    }

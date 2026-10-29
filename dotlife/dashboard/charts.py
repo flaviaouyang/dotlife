@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from datetime import date, datetime, timedelta
+from typing import cast
 
 import altair as alt
 import polars as pl
@@ -245,7 +246,7 @@ def series_chart(chart: CardChart, color: str) -> alt.LayerChart:
         }
     )
     x = alt.X("period:T", axis=None)
-    y = alt.Y("value:Q", axis=None, scale=alt.Scale(zero=chart.kind is ChartKind.BARS))
+    y = alt.Y("value:Q", axis=None, scale=alt.Scale(zero=chart.kind == ChartKind.BARS))
     tooltip = [
         alt.Tooltip("period:T", title="From", format="%-d %b %Y"),
         alt.Tooltip("label:N", title="Value"),
@@ -253,7 +254,7 @@ def series_chart(chart: CardChart, color: str) -> alt.LayerChart:
     paint = alt.condition(
         "datum.current", alt.value(STATUS_HEX[color]), alt.value(MUTED_HEX)
     )
-    if chart.kind is ChartKind.BARS:
+    if chart.kind == ChartKind.BARS:
         marks = [
             mini_base(frame)
             .mark_bar(cornerRadius=2)
@@ -368,6 +369,8 @@ def grid_chart(chart: CardChart, start: date, days: int) -> alt.Chart:
     frame = pl.DataFrame(
         {
             "habit": [habit for habit in habits for _ in dates],
+            "start": [float(index) for _ in habits for index in range(len(dates))],
+            "end": [index + CELL for _ in habits for index in range(len(dates))],
             "day": [f"{day:%a} {day.day}" for _ in habits for day in dates],
             "done": [
                 done.get((habit, day), 0.0) > 0 for habit in habits for day in dates
@@ -378,7 +381,8 @@ def grid_chart(chart: CardChart, start: date, days: int) -> alt.Chart:
         alt.Chart(frame)
         .mark_rect(cornerRadius=2, color=STATUS_HEX["blue"])
         .encode(
-            x=alt.X("day:N", sort=None, axis=None, scale=alt.Scale(paddingInner=0.25)),
+            x=alt.X("start:Q", axis=None, scale=alt.Scale(domain=[0, len(dates)])),
+            x2="end:Q",
             y=alt.Y(
                 "habit:N",
                 axis=alt.Axis(title=None, labelLimit=110, ticks=False, domain=False),
@@ -395,6 +399,123 @@ def grid_chart(chart: CardChart, start: date, days: int) -> alt.Chart:
     )
 
 
+FLOW_WORDS = {0: "none", 1: "light", 2: "medium", 3: "heavy"}
+FLOW_HEX = "#DB2777"
+CELL = 0.8
+
+
+def cycle_chart(chart: CardChart) -> alt.Chart:
+    """Draw the last weeks of a cycle as a strip of days, shaded by flow.
+
+    Args:
+        chart: The card's chart data: (day, flow level) points and the window.
+
+    Returns:
+        The chart: one square a day, darker for heavier flow, faint without flow
+        and fainter still where nothing was recorded.
+    """
+    first, last = cast(tuple[date, date], chart.window)
+    flow = dict(chart.points)
+    days = [first + timedelta(days=offset) for offset in range((last - first).days + 1)]
+    levels = [flow.get(day) for day in days]
+    frame = pl.DataFrame(
+        {
+            "row": ["cycle"] * len(days),
+            "start": [float(index) for index in range(len(days))],
+            "end": [index + CELL for index in range(len(days))],
+            "date": [f"{day:%a} {day.day} {day:%b}" for day in days],
+            "flow": [
+                "not recorded" if level is None else FLOW_WORDS.get(round(level), "")
+                for level in levels
+            ],
+            "strength": [
+                0.06
+                if level is None
+                else (0.18 if level == 0 else 0.35 + 0.65 * level / 3)
+                for level in levels
+            ],
+        }
+    )
+    return (
+        alt.Chart(frame)
+        .mark_rect(cornerRadius=1, color=FLOW_HEX)
+        .encode(
+            x=alt.X("start:Q", axis=None, scale=alt.Scale(domain=[0, len(days)])),
+            x2="end:Q",
+            y=alt.Y("row:N", axis=None),
+            opacity=alt.Opacity("strength:Q", scale=None, legend=None),
+            tooltip=[
+                alt.Tooltip("date:N", title="Day"),
+                alt.Tooltip("flow:N", title="Flow"),
+            ],
+        )
+        .properties(height=alt.Step(20))
+    )
+
+
+def budget_chart(chart: CardChart) -> alt.LayerChart:
+    """Draw spending per budgeted category, with a marker at each budget.
+
+    Args:
+        chart: The card's chart data: spending parts, budget targets, and the home
+            currency code as its unit.
+
+    Returns:
+        The chart: orange bars over budget, blue bars within it.
+    """
+    spent: dict[str, float] = {}
+    for item, _, value in chart.parts:
+        spent[item] = spent.get(item, 0.0) + value
+    targets = dict(chart.targets)
+
+    def money(amount: float) -> str:
+        return format_value(amount, "", chart.unit)
+
+    frame = pl.DataFrame(
+        {
+            "category": list(targets),
+            "spent": [spent.get(category, 0.0) for category in targets],
+            "budget": list(targets.values()),
+            "over": [
+                spent.get(category, 0.0) > budget
+                for category, budget in targets.items()
+            ],
+            "label": [
+                f"{money(spent.get(category, 0.0))} of {money(budget)}"
+                for category, budget in targets.items()
+            ],
+        }
+    )
+    y = alt.Y(
+        "category:N",
+        axis=alt.Axis(title=None, ticks=False, domain=False, labelLimit=100),
+    )
+    tooltip = [
+        alt.Tooltip("category:N", title="Category"),
+        alt.Tooltip("label:N", title="Spent"),
+    ]
+    bars = (
+        alt.Chart(frame)
+        .mark_bar(cornerRadius=2, height=10)
+        .encode(
+            x=alt.X("spent:Q", axis=None),
+            y=y,
+            color=alt.condition(
+                "datum.over",
+                alt.value(STATUS_HEX["orange"]),
+                alt.value(STATUS_HEX["blue"]),
+            ),
+            tooltip=tooltip,
+        )
+    )
+    marks = (
+        alt.Chart(frame)
+        .mark_tick(thickness=2, size=16, color=STATUS_HEX["gray"])
+        .encode(x="budget:Q", y=y, tooltip=tooltip)
+    )
+    return alt.LayerChart(layer=[bars, marks]).properties(height=alt.Step(20))
+
+
 def card_chart(
     chart: CardChart, color: str, start: date, days: int
 ) -> alt.Chart | alt.LayerChart:
@@ -409,12 +530,16 @@ def card_chart(
     Returns:
         The chart to show.
     """
-    if chart.kind is ChartKind.DOTS:
+    if chart.kind == ChartKind.DOTS:
         drawn = dots_chart(chart, color)
-    elif chart.kind is ChartKind.STACK:
+    elif chart.kind == ChartKind.STACK:
         drawn = stack_chart(chart)
-    elif chart.kind is ChartKind.GRID:
+    elif chart.kind == ChartKind.GRID:
         drawn = grid_chart(chart, start, days)
+    elif chart.kind == ChartKind.CYCLE:
+        drawn = cycle_chart(chart)
+    elif chart.kind == ChartKind.BUDGET:
+        drawn = budget_chart(chart)
     else:
         drawn = series_chart(chart, color)
     return drawn.configure_view(strokeWidth=0)

@@ -26,7 +26,9 @@ from dotlife.summaries import (
     Status,
     UsualRange,
     assess,
+    budget_shares,
     clock_by_day,
+    cycle_status,
     daily_counts,
     daily_values,
     display_value,
@@ -39,6 +41,7 @@ from dotlife.summaries import (
 )
 
 SERIES_LENGTH = 26
+CYCLE_WINDOW_DAYS = 56
 NOTABLE_LIMIT = 4
 DEFAULT_USUAL_PERIODS = {Period.WEEK: 8, Period.MONTH: 6}
 OVERVIEW_COLUMNS = {
@@ -54,7 +57,7 @@ OVERVIEW_COLUMNS = {
 }
 LABELS = {
     "habits.times": "Habit check-ins",
-    "cycle.flow_level": "Period days",
+    "cycle.flow_level": "Menstrual cycle",
     "time.hours": "Time tracked",
     "medication.doses": "Medication doses",
     "symptoms.severity": "Symptom severity",
@@ -128,6 +131,8 @@ class ChartKind(StrEnum):
     DOTS = "dots"
     STACK = "stack"
     GRID = "grid"
+    CYCLE = "cycle"
+    BUDGET = "budget"
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,7 +145,9 @@ class CardChart:
             dots. The last one is the selected period or day.
         usual: The usual range as (low, high), drawn as a band, or None.
         goals: (date, target) pairs for a goal line; empty without a goal.
-        parts: (item, date, value) triples for stacks and grids.
+        parts: (item, date, value) triples for stacks, grids and budgets.
+        targets: (item, target) pairs, e.g. each category's budget for the period.
+        window: The first and last day a cycle strip covers.
         unit: The display unit, for tooltips.
     """
 
@@ -149,6 +156,8 @@ class CardChart:
     usual: tuple[float, float] | None = None
     goals: tuple[tuple[date, float], ...] = ()
     parts: tuple[tuple[str, date, float], ...] = ()
+    targets: tuple[tuple[str, float], ...] = ()
+    window: tuple[date, date] | None = None
     unit: str = ""
 
 
@@ -650,6 +659,34 @@ def goal_text(
     return f"{head}: {gap} to go" if goal.at_least else f"{head}: over by {gap}"
 
 
+def last_day_shown(dataset: Dataset, selection: Selection) -> date:
+    """Return the last day the selected period shows: its end, or today's data.
+
+    Args:
+        dataset: The loaded data.
+        selection: The chosen period.
+
+    Returns:
+        The earlier of the period's last day and the latest date in the data.
+    """
+    return min(selection.end - timedelta(days=1), cast(date, dataset.as_of))
+
+
+def period_budgets(dataset: Dataset, selection: Selection) -> dict[str, float]:
+    """Return each category's budget for the selected period, in home currency.
+
+    Args:
+        dataset: The loaded data.
+        selection: The chosen period.
+
+    Returns:
+        Budget by spending category; empty without budgets in config.
+    """
+    context = dataset.contexts.get("finances")
+    budgets = {} if context is None else context.options.get("budgets", {})
+    return budget_shares(budgets, selection.start, selection.end)
+
+
 def card_chart(
     spec: CardSpec, dataset: Dataset, selection: Selection, reading: Reading
 ) -> CardChart | None:
@@ -666,7 +703,21 @@ def card_chart(
     """
     if reading.stale_since is not None or reading.latest_day is not None:
         return None
+    if spec.category == "cycle":
+        last = last_day_shown(dataset, selection)
+        first = last - timedelta(days=CYCLE_WINDOW_DAYS - 1)
+        days = tuple(
+            sorted((d, v) for d, v in reading.daily.items() if first <= d <= last)
+        )
+        return CardChart(ChartKind.CYCLE, days, window=(first, last), unit=reading.unit)
     parts = item_values(spec, dataset, selection)
+    budgets = period_budgets(dataset, selection) if spec.category == "finances" else {}
+    if parts and budgets:
+        targets = tuple(sorted(budgets.items()))
+        currency = dataset.contexts["finances"].options.get("home_currency", "")
+        return CardChart(
+            ChartKind.BUDGET, parts=tuple(parts), targets=targets, unit=currency
+        )
     if parts:
         kind = ChartKind.GRID if spec.category == "habits" else ChartKind.STACK
         return CardChart(kind, parts=tuple(parts), unit=reading.unit)
@@ -735,7 +786,7 @@ def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card |
 
     chip, color = chip_and_color(reading)
     usual = reading.usual
-    return Card(
+    card = Card(
         key=f"{spec.category}.{spec.column or spec.clock_of or 'count'}",
         area=AREA_OF.get(spec.category, AREAS[-1]),
         label=spec.label,
@@ -760,6 +811,79 @@ def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card |
         sensitive=category_named(dataset, spec.category).sensitive,
         assessment=reading.assessment,
     )
+    if spec.category == "cycle":
+        return with_cycle(card, dataset, selection, reading.daily)
+    if spec.category == "finances":
+        note = budget_note(dataset, selection, currency)
+        return replace(card, note=". ".join(part for part in (card.note, note) if part))
+    return card
+
+
+def with_cycle(
+    card: Card, dataset: Dataset, selection: Selection, daily: Daily
+) -> Card:
+    """Describe the cycle instead of a count: the day of the cycle and its dates.
+
+    Args:
+        card: The generic card for flow.
+        dataset: The loaded data.
+        selection: The chosen period.
+        daily: Flow level by date.
+
+    Returns:
+        The card with the cycle day as its value and the period dates as its note.
+    """
+    status = cycle_status(daily, last_day_shown(dataset, selection))
+    if status is None:
+        return card
+    note = (
+        f"Last period {status.last_start.day} {status.last_start:%b} to "
+        f"{status.last_end.day} {status.last_end:%b}"
+    )
+    expected = status.next_expected
+    if expected is not None:
+        note += (
+            f". Typical cycle {status.typical_length} days; next expected around "
+            f"{expected.day} {expected:%b}"
+        )
+    return replace(
+        card,
+        value=f"Day {status.day}",
+        unit="of cycle",
+        delta=None,
+        chip="Cycle",
+        color="gray",
+        usual="",
+        note=note,
+        assessment=None,
+    )
+
+
+def budget_note(dataset: Dataset, selection: Selection, currency: str) -> str:
+    """Compare spending with each budget for the selected period.
+
+    Args:
+        dataset: The loaded data.
+        selection: The chosen period.
+        currency: The home currency code.
+
+    Returns:
+        E.g. "Budgets: books £43.91 of £40.00 (over) · coffee £26.94 of £60.00",
+        or empty without budgets.
+    """
+    budgets = period_budgets(dataset, selection)
+    if not budgets:
+        return ""
+    spec = CardSpec("finances", "amount", "Spending", Aggregate.SUM, "")
+    spent = dict(item_totals(item_values(spec, dataset, selection)))
+
+    def line(category: str, budget: float) -> str:
+        used = spent.get(category, 0.0)
+        over = " (over)" if used > budget else ""
+        money = format_value(used, "", currency)
+        return f"{category} {money} of {format_value(budget, '', currency)}{over}"
+
+    return "Budgets: " + " · ".join(line(c, b) for c, b in sorted(budgets.items()))
 
 
 def with_stuck_note(
