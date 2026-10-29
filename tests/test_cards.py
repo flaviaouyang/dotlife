@@ -130,15 +130,10 @@ class CardChartRenderTest(unittest.TestCase):
             for card in build_overview(dataset, selection).cards:
                 if card.chart is None:
                     continue
-                for dark in (False, True):
-                    with self.subTest(
-                        period=selection.period, card=card.label, dark=dark
-                    ):
-                        spec = card_chart(
-                            card.chart, card.color, selection.start, days, dark
-                        )
-                        svg = vl_convert.vegalite_to_svg(spec.to_dict())
-                        self.assertIn("<svg", svg)
+                with self.subTest(period=selection.period, card=card.label):
+                    spec = card_chart(card.chart, card.color, selection.start, days)
+                    svg = vl_convert.vegalite_to_svg(spec.to_dict())
+                    self.assertIn("<svg", svg)
 
 
 if __name__ == "__main__":

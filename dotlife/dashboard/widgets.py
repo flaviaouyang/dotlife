@@ -49,13 +49,7 @@ def show_card(
         )
         if card.chart is not None:
             st.altair_chart(
-                card_chart(
-                    card.chart,
-                    card.color,
-                    start,
-                    days,
-                    dark=st.context.theme.type == "dark",
-                ),
+                card_chart(card.chart, card.color, start, days),
                 alt=f"{card.label}: recent values, with the usual range and goal",
             )
         st.caption(

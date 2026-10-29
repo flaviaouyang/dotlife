@@ -167,23 +167,9 @@ def nights_chart(nights: Sequence[tuple[str, datetime, datetime, str]]) -> alt.C
 
 
 MINI_HEIGHT = 64
-STATUS_HEX = {"blue": "#3B82F6", "orange": "#F97316"}
-NEUTRAL_HEX = {False: "#52525B", True: "#D4D4D8"}
+STATUS_HEX = {"blue": "#3B82F6", "orange": "#F97316", "gray": "#71717A"}
 MUTED_HEX = "#A1A1AA"
 GOAL_HEX = "#16A34A"
-
-
-def status_hex(color: str, dark: bool) -> str:
-    """Return the hex colour for a card's status, readable in either theme.
-
-    Args:
-        color: The status colour name: blue, orange or gray.
-        dark: Whether the dashboard is in dark mode.
-
-    Returns:
-        A hex colour.
-    """
-    return STATUS_HEX.get(color, NEUTRAL_HEX[dark])
 
 
 def mini_base(frame: pl.DataFrame) -> alt.Chart:
@@ -239,13 +225,12 @@ def mini_goal(goals: Sequence[tuple[date, float]], x: str) -> list[alt.Chart]:
     ]
 
 
-def series_chart(chart: CardChart, color: str, dark: bool) -> alt.LayerChart:
+def series_chart(chart: CardChart, color: str) -> alt.LayerChart:
     """Draw a card's recent periods as a line (averages) or bars (totals).
 
     Args:
         chart: The card's chart data; the last point is the selected period.
         color: The card's status colour name.
-        dark: Whether the dashboard is in dark mode.
 
     Returns:
         The layered chart.
@@ -266,7 +251,7 @@ def series_chart(chart: CardChart, color: str, dark: bool) -> alt.LayerChart:
         alt.Tooltip("label:N", title="Value"),
     ]
     paint = alt.condition(
-        "datum.current", alt.value(status_hex(color, dark)), alt.value(MUTED_HEX)
+        "datum.current", alt.value(STATUS_HEX[color]), alt.value(MUTED_HEX)
     )
     if chart.kind is ChartKind.BARS:
         marks = [
@@ -297,13 +282,12 @@ def series_chart(chart: CardChart, color: str, dark: bool) -> alt.LayerChart:
     )
 
 
-def dots_chart(chart: CardChart, color: str, dark: bool) -> alt.LayerChart:
+def dots_chart(chart: CardChart, color: str) -> alt.LayerChart:
     """Draw each night's bedtime in the period as a dot on a time scale.
 
     Args:
         chart: The card's chart data: (day, minutes after 18:00) points.
         color: The card's status colour name.
-        dark: Whether the dashboard is in dark mode.
 
     Returns:
         The layered chart.
@@ -317,7 +301,7 @@ def dots_chart(chart: CardChart, color: str, dark: bool) -> alt.LayerChart:
     )
     dots = (
         mini_base(frame)
-        .mark_point(filled=True, size=40, color=status_hex(color, dark))
+        .mark_point(filled=True, size=40, color=STATUS_HEX[color])
         .encode(
             x=alt.X("night:N", sort=None, axis=None),
             y=alt.Y("minutes:Q", axis=None, scale=alt.Scale(zero=False, reverse=True)),
@@ -412,7 +396,7 @@ def grid_chart(chart: CardChart, start: date, days: int) -> alt.Chart:
 
 
 def card_chart(
-    chart: CardChart, color: str, start: date, days: int, dark: bool = False
+    chart: CardChart, color: str, start: date, days: int
 ) -> alt.Chart | alt.LayerChart:
     """Draw a card's small chart.
 
@@ -421,17 +405,16 @@ def card_chart(
         color: The card's status colour name.
         start: The selected period's first day, for habit grids.
         days: The selected period's length in days, for habit grids.
-        dark: Whether the dashboard is in dark mode.
 
     Returns:
         The chart to show.
     """
     if chart.kind is ChartKind.DOTS:
-        drawn = dots_chart(chart, color, dark)
+        drawn = dots_chart(chart, color)
     elif chart.kind is ChartKind.STACK:
         drawn = stack_chart(chart)
     elif chart.kind is ChartKind.GRID:
         drawn = grid_chart(chart, start, days)
     else:
-        drawn = series_chart(chart, color, dark)
+        drawn = series_chart(chart, color)
     return drawn.configure_view(strokeWidth=0)
