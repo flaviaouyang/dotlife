@@ -38,10 +38,12 @@ Everything the skills do is also written up as guides for people. You can set do
 ## Planned quick start
 
 ```sh
-uv sync                      # install the dashboard's dependencies
-uv run validate.py sample/   # check the sample data
-uv run streamlit run dashboard/streamlit_app.py
+make install     # or: uv sync
+make validate    # or: uv run validate.py sample/
+make dashboard   # or: uv run streamlit run dashboard/streamlit_app.py
 ```
+
+To use your own data, create your own (private) repo from this template and follow the guides in `docs/sources/`, or let an agent run the `setup-sources` skill.
 
 ## Contributing
 
