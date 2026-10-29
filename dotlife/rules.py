@@ -20,7 +20,7 @@ def local_date(row: Row, column: str, context: Context) -> date:
 
 
 def end_after_start(row: Row, context: Context) -> str | None:
-    """Check that a session ends after it starts.
+    """A session must end after it starts.
 
     Args:
         row: A parsed row with ``start`` and ``end`` timestamps.
@@ -36,7 +36,7 @@ def end_after_start(row: Row, context: Context) -> str | None:
 
 
 def date_is_wake_date(row: Row, context: Context) -> str | None:
-    """Check that a sleep session is filed under the local date its sleeper woke up.
+    """A sleep session is filed under the local date its sleeper woke up.
 
     Args:
         row: A parsed row with ``date`` and an ``end`` timestamp.
@@ -55,7 +55,7 @@ def date_is_wake_date(row: Row, context: Context) -> str | None:
 
 
 def date_is_start_date(row: Row, context: Context) -> str | None:
-    """Check that a session is filed under the local date it started.
+    """A session is filed under the local date it started.
 
     Args:
         row: A parsed row with ``date`` and a ``start`` timestamp.
@@ -71,7 +71,7 @@ def date_is_start_date(row: Row, context: Context) -> str | None:
 
 
 def watch_worn(row: Row, context: Context) -> bool:
-    """Decide whether a watch was worn on a day, so watch-off days stay out of averages.
+    """Days the watch wasn't worn (few steps, little sedentary time) skip averages.
 
     A day with no steps recorded, or with few steps and little sedentary time, counts
     as not worn. Missing sedentary time counts as none.

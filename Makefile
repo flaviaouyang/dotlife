@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 MD_PATHS := -r --respect-gitignore -e ./.venv .
 
-.PHONY: help install format check test release
+.PHONY: help install format check test docs release
 
 help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -23,6 +23,9 @@ check: ## Lint and check formatting and types without changing files (what CI ru
 
 test: ## Run the tests
 	uv run python -m unittest discover -s tests
+
+docs: ## Regenerate the category tables in FORMAT.md
+	uv run python -m dotlife.format_doc
 
 release: ## Bump the version and update CHANGELOG.md (override: BUMP=major|minor|patch or VERSION=vX.Y.Z[-beta.N])
 	@version=$(or $(VERSION),$$(uv run git-cliff --bumped-version $(if $(BUMP),--bump $(BUMP)))) && \
