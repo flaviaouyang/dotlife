@@ -99,6 +99,6 @@ Google style.
 
 ### Performance and size
 
-- Optimal big-O. Vectorize in the dashboard (pandas), not row loops.
+- Optimal big-O. Use polars (never pandas) in the dashboard, with expressions rather than row loops.
 - No code beyond what's needed. Reuse rather than repeat.
 - The stdlib-only rule for `dotlife/` (except `dashboard/`) overrides any urge to add a library.
