@@ -8,7 +8,7 @@ gatherUsageStats = false     # the dashboard shows personal data; send Streamlit
 address = "localhost"         # only this computer can open the dashboard, not the network
 
 [client]
-toolbarMode = "minimal"
+toolbarMode = "viewer"         # keeps Settings (light, dark or system) but hides developer buttons
 
 [theme]
 showWidgetBorder = true
