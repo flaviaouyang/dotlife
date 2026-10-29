@@ -14,6 +14,7 @@ glucose = "mmol/L"           # "mmol/L" or "mg/dL"; files always store mmol/L
 period = "week"              # "week" (Monday to Sunday) or "month"
 show_sensitive = false       # sensitive categories stay hidden until shown in the dashboard
 usual_range = { week = 8, month = 6 }   # full periods behind the "usual range" band
+pinned = []                  # cards shown first on the Overview; the pin buttons edit this
 
 # Categories: activity, workouts, sleep, heart, body, fitness_markers, vitals,
 # nutrition, mindfulness, cycle, medication, symptoms, glucose, mood, reflections, time,

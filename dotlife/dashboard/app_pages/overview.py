@@ -1,16 +1,17 @@
 import streamlit as st
 
 from dotlife.dashboard.cards import build_overview, usual_periods
-from dotlife.dashboard.data import dataset, period_title, selection
+from dotlife.dashboard.data import dataset, period_title, pinned_keys, selection
 from dotlife.dashboard.display import AREAS
-
-COLUMNS = 4
+from dotlife.dashboard.widgets import show_grid
 
 data = dataset()
 chosen = selection()
 overview = build_overview(data, chosen)
 period = chosen.period.value
 count = usual_periods(data.source.config, chosen.period)
+pins = pinned_keys()
+by_key = {card.key: card for card in overview.cards}
 
 st.title(period_title(chosen))
 st.caption(
@@ -27,37 +28,16 @@ if overview.notable:
                 f"{card.unit}. {card.usual}."
             )
 
+pinned_cards = [by_key[key] for key in pins if key in by_key]
+if pinned_cards:
+    st.subheader("Pinned")
+    show_grid(pinned_cards, period, "pinned", set(pins))
+
 for area in AREAS:
     cards = [card for card in overview.cards if card.area == area]
-    if not cards:
-        continue
-    st.subheader(area)
-    for first in range(0, len(cards), COLUMNS):
-        for column, card in zip(
-            st.columns(COLUMNS), cards[first : first + COLUMNS], strict=False
-        ):
-            with column.container(border=True, height="stretch"):
-                st.badge(card.chip, color=card.color)
-                st.metric(
-                    card.label,
-                    card.value,
-                    card.delta,
-                    delta_color=card.color,
-                    delta_description=None
-                    if card.delta is None
-                    else f"vs last {period}",
-                    chart_data=card.series,
-                    chart_type="line",
-                )
-                st.caption(
-                    ". ".join(
-                        part for part in (card.unit.capitalize(), card.usual) if part
-                    )
-                )
-                if card.goal:
-                    st.caption(f":material/flag: {card.goal}")
-                if card.note:
-                    st.caption(card.note)
+    if cards:
+        st.subheader(area)
+        show_grid(cards, period, area, set(pins))
 
 if overview.missing:
     st.caption(f"No data this {period}: {', '.join(overview.missing)}.")
@@ -66,3 +46,5 @@ if overview.hidden:
         f"{overview.hidden} sensitive categories are hidden. Switch on "
         "**Show sensitive** in the sidebar to see them."
     )
+if not pinned_cards:
+    st.caption("Pin a card to keep it at the top. Pins are saved in your config.toml.")

@@ -75,6 +75,24 @@ class DashboardSmokeTest(unittest.TestCase):
             labels = [metric.label for metric in app.metric]
             self.assertEqual(labels, ["Steps", "Active time", "Time asleep", "Bedtime"])
 
+    def test_pin_and_unpin(self):
+        """Pinning adds a Pinned section and saves it; comments in config survive."""
+        with tempfile.TemporaryDirectory() as folder:
+            config = Path(folder) / "config.toml"
+            shutil.copy(ROOT / "config.toml", config)
+            os.environ[CONFIG_ENV] = str(config)
+            os.environ[DATA_ENV] = str(ROOT / "sample")
+            app = AppTest.from_file(str(APP), default_timeout=30).run()
+            self.assertNotIn("Pinned", [header.value for header in app.subheader])
+            app.button(key="pin-Body and health-activity.steps").click().run()
+            self.assertIn("Pinned", [header.value for header in app.subheader])
+            saved = config.read_text(encoding="utf-8")
+            self.assertIn('pinned = ["activity.steps"]', saved)
+            self.assertIn("# cards shown first on the Overview", saved)
+            app.button(key="pin-pinned-activity.steps").click().run()
+            self.assertNotIn("Pinned", [header.value for header in app.subheader])
+            self.assertIn("pinned = []", config.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

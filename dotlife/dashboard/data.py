@@ -1,8 +1,10 @@
 import os
+import tomllib
 from datetime import date, timedelta
 from pathlib import Path
 
 import streamlit as st
+import tomlkit
 
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data
 from dotlife.dashboard.cards import Selection
@@ -165,3 +167,53 @@ def period_title(chosen: Selection) -> str:
     if chosen.period is Period.MONTH:
         return f"{chosen.start:%B %Y}"
     return f"Week of {chosen.start.day} {chosen.start:%B %Y}"
+
+
+def config_path() -> Path:
+    """Return the repo's config.toml, which ``dotlife dashboard`` was started with.
+
+    Returns:
+        Its path.
+    """
+    return Path(os.environ.get(CONFIG_ENV, "config.toml"))
+
+
+def pinned_keys() -> list[str]:
+    """Read the pinned cards from the repo's config.toml.
+
+    Pins always live in the repo's own config, even while the sample is shown, so
+    pinning never edits the sample.
+
+    Returns:
+        Card keys such as ``activity.steps``, in the order they were pinned.
+    """
+    try:
+        with config_path().open("rb") as file:
+            config = tomllib.load(file)
+    except (FileNotFoundError, tomllib.TOMLDecodeError):
+        return []
+    return list(config.get("dashboard", {}).get("pinned", []))
+
+
+def set_pinned(key: str, pinned: bool) -> None:
+    """Pin or unpin a card by rewriting ``[dashboard] pinned`` in config.toml.
+
+    The rest of the file, comments included, is kept as it is.
+
+    Args:
+        key: The card's key, e.g. ``activity.steps``.
+        pinned: True to pin it, False to unpin it.
+    """
+    path = config_path()
+    with path.open(encoding="utf-8") as file:
+        document = tomlkit.parse(file.read())
+    dashboard = document.setdefault("dashboard", tomlkit.table())
+    keys = [str(item) for item in dashboard.get("pinned", [])]
+    keys = (
+        [*keys, key]
+        if pinned and key not in keys
+        else [k for k in keys if pinned or k != key]
+    )
+    dashboard["pinned"] = keys
+    with path.open("w", encoding="utf-8") as file:
+        file.write(tomlkit.dumps(document))
