@@ -104,3 +104,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Once the format is stable, the most usef
 ## License
 
 [MIT](LICENSE)
+
+---
+
+Created by [Flavia Ouyang](https://www.flaviaouyang.com).

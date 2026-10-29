@@ -76,5 +76,6 @@ with st.sidebar:
             "London. Add your own data folder and she disappears.",
             title="Sample data",
         )
+    st.caption("Created by [Flavia Ouyang](https://www.flaviaouyang.com)")
 
 navigation.run()
