@@ -22,6 +22,8 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `load.py`: reads a data folder once into a `Dataset` (rows by category, settings, reflections).
   - `summaries.py`: the calculations the dashboard shows: daily and period values, clock times, the usual range, assessments, notable metrics, the stuck flag and display units. Standard library only, so other tools (like a future weekly-review skill) can reuse them.
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
+  - `setup.py`: `dotlife setup`: the questionnaire, and `--answers` for agents; both write `config.toml` and the start of `sources.md` with the same code.
+  - `terminal.py`: the questionnaire's arrow-key menus (standard library: `termios` or `msvcrt`), with numbered prompts when input isn't a terminal. Colour honours `NO_COLOR`.
   - `fresh.py`: `dotlife fresh`, which runs the person's source scripts listed in `config.toml`, then validates.
   - `cli.py` and `__main__.py`: the `dotlife` command.
   - `sources/`: the importers.

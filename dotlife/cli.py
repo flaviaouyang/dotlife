@@ -8,6 +8,8 @@ from pathlib import Path
 
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data, load_config
 from dotlife.fresh import fresh_steps, run_fresh
+from dotlife.setup import run_answers, run_setup
+from dotlife.terminal import prompter
 from dotlife.validate import format_json, format_text, validate_folder
 
 EXIT_OK, EXIT_ERRORS, EXIT_USAGE = 0, 1, 2
@@ -109,6 +111,29 @@ def run_fresh_command(args: argparse.Namespace) -> int:
     return run_fresh(args.config, config, steps)
 
 
+def run_setup_command(args: argparse.Namespace) -> int:
+    """Ask the setup questions, or take an agent's answers, and write the files.
+
+    Args:
+        args: Parsed arguments: ``config``, ``answers`` and ``print_answers``.
+
+    Returns:
+        0 when done or cancelled, 2 when config.toml can't be read or the answers
+        are wrong.
+    """
+    try:
+        if args.answers is not None or args.print_answers:
+            print(run_answers(args.config, args.answers))
+            return EXIT_OK
+        return run_setup(args.config, prompter())
+    except (FileNotFoundError, ValueError) as error:
+        print(f"dotlife: {error}", file=sys.stderr)
+        return EXIT_USAGE
+    except (KeyboardInterrupt, EOFError):
+        print("\nStopped; nothing written.", file=sys.stderr)
+        return EXIT_USAGE
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the ``dotlife`` command's argument parser.
 
@@ -150,6 +175,32 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fresh.add_argument("--only", metavar="NAME", help="run only the step NAME")
     fresh.set_defaults(handler=run_fresh_command)
+    setup = commands.add_parser(
+        "setup",
+        help="answer a few questions about what you track and where it comes from",
+        description="Ask what you track and where it comes from, then write "
+        "config.toml and sources.md. Run it again to change your answers.",
+    )
+    setup.add_argument(
+        "--config",
+        type=Path,
+        default=Path("config.toml"),
+        help="path to config.toml (default: ./config.toml)",
+    )
+    answers = setup.add_mutually_exclusive_group()
+    answers.add_argument(
+        "--answers",
+        type=Path,
+        metavar="FILE",
+        help="write answers from a JSON file instead of asking (for AI agents); "
+        "keys left out keep their current values",
+    )
+    answers.add_argument(
+        "--print-answers",
+        action="store_true",
+        help="print the current answers as JSON, the format --answers reads",
+    )
+    setup.set_defaults(handler=run_setup_command)
     return parser
 
 

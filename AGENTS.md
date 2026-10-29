@@ -19,8 +19,8 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 
 ## Skills and commands
 
-- `uv run dotlife setup`: the questionnaire (what to track, sensitive categories, time zone, devices and apps). It writes `config.toml` and the start of `sources.md`. Deterministic; no agent needed.
-- `setup` (in `.agents/skills/`) continues from those answers: reads the guides in `docs/sources/`, writes the scripts, lists them for `make fresh`, runs it once and deletes `sample/`.
+- `make setup` (`uv run dotlife setup`): the questionnaire, for people without an agent: what to track, the apps and devices used, a ranking where they overlap, and a review of which source fills what. It writes `config.toml` and the start of `sources.md`.
+- `setup` (in `.agents/skills/`): the agent's path. It proposes what to track and where it comes from, from what it knows and what it asks, checks the plan with the person, and records it with `uv run dotlife setup --answers <file>` (`--print-answers` shows the current answers as JSON). Don't edit `track` or `[sources]` in `config.toml` by hand. Then it reads the guides in `docs/sources/`, writes the scripts, lists them for `make fresh`, runs it once and deletes `sample/`.
 - `make fresh`: runs every source script in the order `config.toml` lists, then the validator. No agent needed; the person runs it whenever they want fresh data.
 - `fetch` (in `.agents/skills/`): does the steps only an agent can do (connector-only sources and AI inference), then runs `make fresh`.
 - `maintain` (in `.agents/skills/`): for when `make fresh` fails, or to add a source, change a device or change how something works. It updates the scripts, `config.toml` and `sources.md` together.

@@ -40,14 +40,18 @@ watch_off_sedentary_min = 480
 # Many watches only update VO2 max after an outdoor run with GPS.
 stale_after_days = { vo2max_ml_kg_min = 90 }
 
+[weather]
+# Home location for the weather script, rounded to two decimals (about a kilometre).
+# latitude = 51.51
+# longitude = -0.13
+
 [reflections]
 time_format = "%Y-%m-%d %H:%M"    # for a jrnl file, use jrnl's "%Y-%m-%d %I:%M:%S %p"
 tag_symbols = "#@"                # words starting with these are tags
 
 [finances]
 home_currency = "EUR"             # ISO 4217; other currencies are flagged, not converted
-# Monthly budget per category, in home_currency:
-# budgets = { groceries = 400, eating_out = 150, transport = 80 }
+budgets = {}                      # monthly, in home_currency, e.g. { groceries = 400 }
 
 # Source scripts `make fresh` runs, in order, from this folder. Each gets
 # DOTLIFE_CONFIG and DOTLIFE_DATA; exit code 0 means it finished. A script is a
@@ -75,3 +79,6 @@ home_currency = "EUR"             # ISO 4217; other currencies are flagged, not 
 # minimum = 0
 # maximum = 1440
 # plausible = [0, 180]
+
+# Per category, where its data comes from, best first; `dotlife setup` writes it.
+[sources]
