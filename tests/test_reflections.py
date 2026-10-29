@@ -12,12 +12,12 @@ class ParseTest(unittest.TestCase):
     """Entries split the jrnl way: a timestamp line starts each one."""
 
     def test_several_a_day_with_body_lines_and_stars(self):
-        """Lines after a header belong to it, blank ones included, until the next."""
+        """Lines after a header belong to it until the next; a star ends the first."""
         text = (
             "[2026-08-24 08:12] Coffee first. #work\n"
-            "[2026-08-24 22:40] Long day.\n"
+            "[2026-08-24 22:40] Long day. *\n"
             "\n"
-            "Bed soon. @bob *\n"
+            "Bed soon. @bob\n"
         )
         parsed = parse_reflections(text, "%Y-%m-%d %H:%M", "#@")
         self.assertEqual(
@@ -39,6 +39,15 @@ class ParseTest(unittest.TestCase):
                 ),
             ],
         )
+
+    def test_tags_match_jrnl(self):
+        """Tags ignore case and keep jrnl's extra characters."""
+        parsed = parse_reflections(
+            "[2026-08-24 08:12] Lunch with @Bob, then @bob again. #work/home C#\n",
+            "%Y-%m-%d %H:%M",
+            "#@",
+        )
+        self.assertEqual(parsed.reflections[0].tags, ("@bob", "#work/home"))
 
     def test_jrnl_time_format(self):
         """A jrnl file reads directly once its time format is set."""

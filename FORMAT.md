@@ -53,8 +53,8 @@ Short, text-only notes written through the day, in the plain-text format [jrnl](
 
 - One file a year: `reflections/2026.txt`.
 - Each entry starts with its local time in brackets, then its text: `[2026-08-24 22:40] Found a replay attack in section 3. #work`. Lines after it belong to the same entry until the next one.
-- A day can have any number of entries. A trailing `*` stars an entry.
-- Words starting with `#` or `@` are tags.
+- A day can have any number of entries. A `*` at the end of an entry's first line stars it, as in jrnl.
+- Words starting with `#` or `@` are tags, matched as jrnl does: case is ignored, and a tag can contain `-`, `+`, `*`, `#` and `/`.
 - `time_format` and `tag_symbols` in `[reflections]` change the format. The default time format is `%Y-%m-%d %H:%M`; for jrnl's default, use `%Y-%m-%d %I:%M:%S %p`.
 - Entries are plain text, not Markdown. Days without one are not gaps.
 

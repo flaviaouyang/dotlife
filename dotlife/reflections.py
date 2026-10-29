@@ -19,8 +19,9 @@ class Reflection:
     Attributes:
         time: When it was written, in local time.
         text: What was written, tags included, without the star.
-        starred: Whether it was marked with a trailing ``*``.
-        tags: Its tags, in order of first use, without repeats.
+        starred: Whether its first line ended with ``*``.
+        tags: Its tags, lower-cased as jrnl does, in order of first use, without
+            repeats.
         line: The line it starts on in its file.
     """
 
@@ -66,7 +67,7 @@ def settings(options: Mapping[str, Any]) -> tuple[str, str]:
 
 
 def tag_pattern(symbols: str) -> re.Pattern[str]:
-    """Build the pattern for tags: a symbol at the start of a word, then the word.
+    """Build jrnl's pattern for tags: a symbol starting a word, then the word.
 
     Args:
         symbols: Characters that start a tag, e.g. ``#@``.
@@ -75,10 +76,10 @@ def tag_pattern(symbols: str) -> re.Pattern[str]:
         The compiled pattern.
 
     Example:
-        >>> tag_pattern("#@").findall("Dinner with @bob. #food, not C#.")
-        ['@bob', '#food']
+        >>> tag_pattern("#@").findall("Dinner with @bob. #food/home, not C#.")
+        ['@bob', '#food/home']
     """
-    return re.compile(rf"(?<!\S)[{re.escape(symbols)}][\w-]+")
+    return re.compile(rf"(?<!\S)[{re.escape(symbols)}][-+*#/\w]+")
 
 
 def header_time(line: str, time_format: str) -> tuple[datetime, str] | None:
@@ -104,7 +105,8 @@ def parse_reflections(text: str, time_format: str, symbols: str) -> Parsed:
     r"""Split a reflections file into entries, jrnl's plain-text way.
 
     Each entry starts with ``[<time>] text`` on a line of its own; the lines after
-    it belong to it until the next entry. A trailing ``*`` stars it.
+    it belong to it until the next entry. A ``*`` ending the first line stars it, as
+    jrnl writes it.
 
     Args:
         text: The file's contents.
@@ -132,13 +134,18 @@ def parse_reflections(text: str, time_format: str, symbols: str) -> Parsed:
         elif line.strip():
             stray.append(number)
     reflections = []
-    for number, time, lines in starts:
-        body = "\n".join(lines).strip()
-        starred = body == STAR or body.endswith(f" {STAR}")
-        body = body.removesuffix(STAR).rstrip() if starred else body
+    for number, time, (title, *rest) in starts:
+        title = title.rstrip()
+        starred = title == STAR or title.endswith(f" {STAR}")
+        title = title.removesuffix(STAR).rstrip() if starred else title
+        body = "\n".join([title, *rest]).strip()
         reflections.append(
             Reflection(
-                time, body, starred, tuple(dict.fromkeys(tags.findall(body))), number
+                time,
+                body,
+                starred,
+                tuple(dict.fromkeys(tag.lower() for tag in tags.findall(body))),
+                number,
             )
         )
     return Parsed(tuple(reflections), tuple(stray))
