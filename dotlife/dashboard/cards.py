@@ -200,7 +200,8 @@ class Card:
         unit: What the number is, e.g. "a day".
         delta: The change since the previous period, formatted, or None.
         chip: Its status: "Usual", "Below usual", "Stale", "So far" and so on.
-        color: The colour of the change and sparkline: blue, orange or gray.
+        color: The colour of the change and sparkline: green (good), orange
+            (bad), blue (neutral) or gray (stale or not yet comparable).
         usual: The usual range in words, or empty.
         note: Extra context, e.g. a breakdown or a stale warning; may be empty.
         goal: Progress towards the metric's goal, or empty without one.
@@ -908,7 +909,7 @@ def with_cycle(
         unit="of cycle",
         delta=None,
         chip="Cycle",
-        color="gray",
+        color="blue",
         usual="",
         note=note,
         assessment=None,

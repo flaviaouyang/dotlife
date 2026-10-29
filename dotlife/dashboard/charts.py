@@ -168,7 +168,12 @@ def nights_chart(nights: Sequence[tuple[str, datetime, datetime, str]]) -> alt.C
 
 
 MINI_HEIGHT = 64
-STATUS_HEX = {"blue": "#3B82F6", "orange": "#F97316", "gray": "#71717A"}
+STATUS_HEX = {
+    "green": "#16A34A",
+    "blue": "#3B82F6",
+    "orange": "#F97316",
+    "gray": "#71717A",
+}
 MUTED_HEX = "#A1A1AA"
 GOAL_HEX = "#16A34A"
 

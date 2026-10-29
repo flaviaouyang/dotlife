@@ -39,11 +39,11 @@ AREA_OF = {
     "finances": "Money",
     **dict.fromkeys(("events", "weather", "social", "travel"), "Context"),
 }
-Color = Literal["blue", "orange", "gray"]
+Color = Literal["green", "orange", "blue", "gray"]
 TONE_COLORS: dict[Tone, Color] = {
-    Tone.GOOD: "blue",
+    Tone.GOOD: "green",
     Tone.BAD: "orange",
-    Tone.NEUTRAL: "gray",
+    Tone.NEUTRAL: "blue",
 }
 CURRENCY_SYMBOLS = {"GBP": "£", "EUR": "€", "USD": "$"}
 CLOCK = "clock"
