@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 MD_PATHS := -r --respect-gitignore -e ./.venv .
 
-.PHONY: help install format test release
+.PHONY: help install format check test release
 
 help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -14,6 +14,12 @@ format: ## Lint and format Python and Markdown
 	uv run ruff check --fix .
 	uv run pymarkdown fix $(MD_PATHS) || true
 	uv run pymarkdown scan $(MD_PATHS)
+
+check: ## Lint and check formatting and types without changing files (what CI runs)
+	uv run ruff check .
+	uv run ruff format --check .
+	uv run pymarkdown scan $(MD_PATHS)
+	uvx pyright@1.1.414 --pythonpath .venv/bin/python dotlife tests
 
 test: ## Run the tests
 	uv run python -m unittest discover -s tests

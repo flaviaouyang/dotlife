@@ -36,6 +36,7 @@ The project is early, so most of these don't exist yet. All project code lives i
 
 - Python 3.11+. Everything in `dotlife/` except `dashboard/` uses only the standard library. The dashboard's dependencies are managed with uv in `pyproject.toml` (`uv add <pkg>`).
 - `make install` sets up the environment. `make` lists the other commands.
+- `make check` runs what CI runs (lint, formatting and pyright type checks) without changing files. GitHub Actions also runs `make test` on Python 3.11 to 3.14 (`.github/workflows/ci.yml`).
 - `make format` runs ruff and pymarkdown. Ruff enforces the docstring and import rules (see `pyproject.toml`). Write Markdown with blank lines around headings and lists, one paragraph per line.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Keep them small, with formatting changes in their own commit.
 
