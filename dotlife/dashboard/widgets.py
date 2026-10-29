@@ -1,12 +1,17 @@
+from datetime import date
+
 import streamlit as st
 
-from dotlife.dashboard.cards import Card
+from dotlife.dashboard.cards import Card, Selection
+from dotlife.dashboard.charts import card_chart
 from dotlife.dashboard.data import set_pinned
 
 COLUMNS = 4
 
 
-def show_card(card: Card, period: str, section: str, pinned: bool) -> None:
+def show_card(
+    card: Card, period: str, section: str, pinned: bool, start: date, days: int
+) -> None:
     """Draw one Overview card: status, pin button, number, change, notes.
 
     Args:
@@ -14,6 +19,8 @@ def show_card(card: Card, period: str, section: str, pinned: bool) -> None:
         period: "week" or "month", for the change's description.
         section: Where it is drawn ("pinned" or an area), to keep widget keys unique.
         pinned: Whether the card is pinned, which sets the button's action.
+        start: The selected period's first day.
+        days: The selected period's length in days.
     """
     with st.container(border=True, height="stretch"):
         with st.container(
@@ -39,9 +46,12 @@ def show_card(card: Card, period: str, section: str, pinned: bool) -> None:
             card.delta,
             delta_color=card.color,
             delta_description=None if card.delta is None else f"vs last {period}",
-            chart_data=card.series,
-            chart_type="line",
         )
+        if card.chart is not None:
+            st.altair_chart(
+                card_chart(card.chart, card.color, start, days),
+                alt=f"{card.label}: recent values, with the usual range and goal",
+            )
         st.caption(
             ". ".join(part for part in (card.unit.capitalize(), card.usual) if part)
         )
@@ -51,12 +61,14 @@ def show_card(card: Card, period: str, section: str, pinned: bool) -> None:
             st.caption(card.note)
 
 
-def show_grid(cards: list[Card], period: str, section: str, pinned: set[str]) -> None:
+def show_grid(
+    cards: list[Card], selection: Selection, section: str, pinned: set[str]
+) -> None:
     """Draw cards in rows of four.
 
     Args:
         cards: The cards, in order.
-        period: "week" or "month".
+        selection: The chosen period.
         section: The section's name, to keep widget keys unique.
         pinned: Keys of the pinned cards.
     """
@@ -64,4 +76,11 @@ def show_grid(cards: list[Card], period: str, section: str, pinned: set[str]) ->
         row = cards[first : first + COLUMNS]
         for column, card in zip(st.columns(COLUMNS), row, strict=False):
             with column:
-                show_card(card, period, section, card.key in pinned)
+                show_card(
+                    card,
+                    selection.period.value,
+                    section,
+                    card.key in pinned,
+                    selection.start,
+                    (selection.end - selection.start).days,
+                )

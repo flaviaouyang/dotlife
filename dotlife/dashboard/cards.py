@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
+from enum import StrEnum
 from typing import Any, cast
 
 from dotlife.config import Goal, goal_for
@@ -119,6 +120,38 @@ class Reading:
     latest_day: date | None
 
 
+class ChartKind(StrEnum):
+    """The small chart a card draws, chosen by the kind of metric."""
+
+    LINE = "line"
+    BARS = "bars"
+    DOTS = "dots"
+    STACK = "stack"
+    GRID = "grid"
+
+
+@dataclass(frozen=True, slots=True)
+class CardChart:
+    """What a card's small chart shows.
+
+    Attributes:
+        kind: How to draw it.
+        points: (date, value) pairs: period starts for lines and bars, days for
+            dots. The last one is the selected period or day.
+        usual: The usual range as (low, high), drawn as a band, or None.
+        goals: (date, target) pairs for a goal line; empty without a goal.
+        parts: (item, date, value) triples for stacks and grids.
+        unit: The display unit, for tooltips.
+    """
+
+    kind: ChartKind
+    points: tuple[tuple[date, float], ...] = ()
+    usual: tuple[float, float] | None = None
+    goals: tuple[tuple[date, float], ...] = ()
+    parts: tuple[tuple[str, date, float], ...] = ()
+    unit: str = ""
+
+
 @dataclass(frozen=True, slots=True)
 class Card:
     """Everything an Overview card shows.
@@ -135,7 +168,8 @@ class Card:
         usual: The usual range in words, or empty.
         note: Extra context, e.g. a breakdown or a stale warning; may be empty.
         goal: Progress towards the metric's goal, or empty without one.
-        series: Recent period values for the sparkline, oldest first.
+        chart: The card's small chart, or None when one would say nothing (a
+            latest reading that hasn't changed).
         sensitive: Whether it is hidden until "Show sensitive" is on.
         assessment: How the value compares with the usual range, if it can.
     """
@@ -151,7 +185,7 @@ class Card:
     usual: str
     note: str
     goal: str
-    series: tuple[float, ...]
+    chart: CardChart | None
     sensitive: bool
     assessment: Assessment | None
 
@@ -393,34 +427,82 @@ def chip_and_color(reading: Reading) -> tuple[str, Color]:
     return STATUS_CHIPS[reading.assessment.status], TONE_COLORS[reading.assessment.tone]
 
 
-def breakdown(spec: CardSpec, dataset: Dataset, selection: Selection) -> str:
-    """Split a card's period total by item, e.g. hours per calendar category.
+def item_values(
+    spec: CardSpec, dataset: Dataset, selection: Selection
+) -> list[tuple[str, date, float]]:
+    """List a card's values by item and day in the period, for breakdowns.
+
+    Items are a daily category's one item column (a habit, a calendar category)
+    or a transaction's spending category.
 
     Args:
-        spec: The card; only daily categories with one item column get a breakdown.
+        spec: The card.
         dataset: The loaded data.
         selection: The chosen period.
 
     Returns:
-        E.g. "work 38.6 · leisure 25.1", largest first, or empty.
+        (item, date, value) triples; empty for cards without items. Spending is
+        positive.
     """
     if spec.column is None or spec.category == "reflections":
-        return ""
+        return []
     category = category_named(dataset, spec.category)
-    items = [name for name in category.key if name != "date"]
-    if category.grain is not Grain.DAY or len(items) != 1:
-        return ""
+    if spec.category == "finances":
+        home = dataset.contexts["finances"].options.get("home_currency")
+        item, keep = "category", lambda row: is_spending(row, home)
+    else:
+        items = [name for name in category.key if name != "date"]
+        if category.grain is not Grain.DAY or len(items) != 1:
+            return []
+        item, keep = items[0], lambda row: True
+    sign = -1.0 if spec.category == "finances" else 1.0
+    return [
+        (
+            cast(str, row[item]),
+            cast(date, row["date"]),
+            sign * cast(float, row[spec.column]),
+        )
+        for row in dataset.rows[spec.category]
+        if row.get(spec.column) is not None
+        and selection.start <= cast(date, row["date"]) < selection.end
+        and keep(row)
+    ]
+
+
+def item_totals(values: list[tuple[str, date, float]]) -> list[tuple[str, float]]:
+    """Total item values over the period, largest first.
+
+    Args:
+        values: (item, date, value) triples from ``item_values``.
+
+    Returns:
+        (item, total) pairs.
+    """
     totals: dict[str, float] = defaultdict(float)
-    for row in dataset.rows[spec.category]:
-        value = row.get(spec.column)
-        if (
-            value is not None
-            and selection.start <= cast(date, row["date"]) < selection.end
-        ):
-            totals[cast(str, row[items[0]])] += cast(float, value)
-    ranked = sorted(totals.items(), key=lambda pair: -pair[1])[:5]
+    for item, _, value in values:
+        totals[item] += value
+    return sorted(totals.items(), key=lambda pair: -pair[1])
+
+
+def breakdown(spec: CardSpec, dataset: Dataset, selection: Selection) -> str:
+    """Split a card's period total by item, e.g. hours per calendar category.
+
+    Args:
+        spec: The card.
+        dataset: The loaded data.
+        selection: The chosen period.
+
+    Returns:
+        E.g. "work 38.6 · leisure 25.1", the five largest, or empty.
+    """
+    currency = (
+        dataset.contexts["finances"].options.get("home_currency", "")
+        if spec.category == "finances"
+        else ""
+    )
+    totals = item_totals(item_values(spec, dataset, selection))[:5]
     return " · ".join(
-        f"{name} {format_value(total, spec.unit)}" for name, total in ranked
+        f"{name} {format_value(total, spec.unit, currency)}" for name, total in totals
     )
 
 
@@ -568,6 +650,65 @@ def goal_text(
     return f"{head}: {gap} to go" if goal.at_least else f"{head}: over by {gap}"
 
 
+def card_chart(
+    spec: CardSpec, dataset: Dataset, selection: Selection, reading: Reading
+) -> CardChart | None:
+    """Choose and fill a card's small chart.
+
+    Args:
+        spec: The card.
+        dataset: The loaded data.
+        selection: The chosen period.
+        reading: The card's numbers.
+
+    Returns:
+        The chart, or None for a latest reading that is stale or not from the period.
+    """
+    if reading.stale_since is not None or reading.latest_day is not None:
+        return None
+    parts = item_values(spec, dataset, selection)
+    if parts:
+        kind = ChartKind.GRID if spec.category == "habits" else ChartKind.STACK
+        return CardChart(kind, parts=tuple(parts), unit=reading.unit)
+    if spec.clock_of is not None:
+        nights = sorted(
+            (day, value)
+            for day, value in reading.daily.items()
+            if selection.start <= day < selection.end
+        )
+        usual = reading.usual
+        band = None if usual is None else (usual.low, usual.high)
+        return CardChart(ChartKind.DOTS, tuple(nights), band, unit=reading.unit)
+    earlier = previous_starts(selection.start, selection.period, SERIES_LENGTH - 1)
+    starts = [*reversed(earlier), selection.start]
+    points = tuple(
+        (start, reading.values[start]) for start in starts if start in reading.values
+    )
+    context_only = AREA_OF.get(spec.category) == "Context"
+    usual = None if reading.usual is None or context_only else reading.usual
+    goal = display_goal(spec, dataset)
+    goals = (
+        ()
+        if goal is None
+        else tuple(
+            (
+                start,
+                period_target(
+                    goal, spec.aggregate, start, period_end(start, selection.period)
+                ),
+            )
+            for start, _ in points
+        )
+    )
+    kind = (
+        ChartKind.BARS
+        if spec.aggregate in (Aggregate.SUM, Aggregate.DAYS)
+        else ChartKind.LINE
+    )
+    band = None if usual is None else (usual.low, usual.high)
+    return CardChart(kind, points, band, goals, unit=reading.unit)
+
+
 def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card | None:
     """Build one card for the selected period.
 
@@ -593,10 +734,6 @@ def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card |
         return format_value(value, unit, currency)
 
     chip, color = chip_and_color(reading)
-    earlier = previous_starts(selection.start, selection.period, SERIES_LENGTH - 1)
-    series = [reading.values.get(start) for start in reversed(earlier)] + [
-        reading.current
-    ]
     usual = reading.usual
     return Card(
         key=f"{spec.category}.{spec.column or spec.clock_of or 'count'}",
@@ -619,7 +756,7 @@ def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card |
         else f"Usual {shown(usual.low)} to {shown(usual.high)}",
         note=card_note(spec, dataset, selection, reading),
         goal=goal_text(spec, reading, display_goal(spec, dataset), selection, currency),
-        series=tuple(value for value in series if value is not None),
+        chart=card_chart(spec, dataset, selection, reading),
         sensitive=category_named(dataset, spec.category).sensitive,
         assessment=reading.assessment,
     )

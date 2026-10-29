@@ -1,11 +1,12 @@
 import unittest
 from datetime import date
 from pathlib import Path
+from typing import cast
 from zoneinfo import ZoneInfo
 
 from dotlife.categories import ACTIVITY, BODY
 from dotlife.config import Goal, find_data, goal_for, goal_problems
-from dotlife.dashboard.cards import Selection, build_overview
+from dotlife.dashboard.cards import CardChart, ChartKind, Selection, build_overview
 from dotlife.load import load_dataset
 from dotlife.periods import Period
 from dotlife.schema import Context
@@ -84,6 +85,32 @@ class SampleGoalTextTest(unittest.TestCase):
         """A month's total goal is the weekly goal scaled to the month's length."""
         goals = self.goals(Selection(Period.MONTH, date(2026, 7, 1), False))
         self.assertEqual(goals["Active time"], "Goal 11 h 04 m a month: reached")
+
+
+class CardChartTest(unittest.TestCase):
+    """Each kind of metric gets the chart that suits it."""
+
+    def test_chart_kinds(self):
+        """Averages are lines, totals bars, bedtime dots, breakdowns stacks."""
+        dataset = load_dataset(find_data(ROOT / "config.toml", ROOT / "sample"))
+        selection = Selection(Period.WEEK, date(2026, 8, 24), True)
+        charts = {
+            card.label: card.chart for card in build_overview(dataset, selection).cards
+        }
+        kinds = {
+            label: chart.kind if chart else None for label, chart in charts.items()
+        }
+        self.assertEqual(kinds["Steps"], ChartKind.LINE)
+        self.assertEqual(kinds["Active time"], ChartKind.BARS)
+        self.assertEqual(kinds["Bedtime"], ChartKind.DOTS)
+        self.assertEqual(kinds["Habit check-ins"], ChartKind.GRID)
+        self.assertEqual(kinds["Time tracked"], ChartKind.STACK)
+        self.assertEqual(kinds["Spending"], ChartKind.STACK)
+        self.assertIsNone(kinds["VO2 max"])
+        steps = cast(CardChart, charts["Steps"])
+        self.assertIsNotNone(steps.usual)
+        self.assertEqual(steps.goals[-1], (date(2026, 8, 24), 10000.0))
+        self.assertIsNone(cast(CardChart, charts["Mean temperature"]).usual)
 
 
 if __name__ == "__main__":

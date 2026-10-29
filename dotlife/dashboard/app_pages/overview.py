@@ -31,13 +31,13 @@ if overview.notable:
 pinned_cards = [by_key[key] for key in pins if key in by_key]
 if pinned_cards:
     st.subheader("Pinned")
-    show_grid(pinned_cards, period, "pinned", set(pins))
+    show_grid(pinned_cards, chosen, "pinned", set(pins))
 
 for area in AREAS:
     cards = [card for card in overview.cards if card.area == area]
     if cards:
         st.subheader(area)
-        show_grid(cards, period, area, set(pins))
+        show_grid(cards, chosen, area, set(pins))
 
 if overview.missing:
     st.caption(f"No data this {period}: {', '.join(overview.missing)}.")
