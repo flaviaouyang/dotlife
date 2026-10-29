@@ -19,10 +19,10 @@ class SampleTest(unittest.TestCase):
         """Every category has data, including the custom metric, and none has errors."""
         self.assertEqual(self.report.error_count, 0)
         self.assertEqual(self.report.missing, [])
-        self.assertIn("experiments", {file.category for file in self.report.files})
+        self.assertIn("puzzles", {file.category for file in self.report.files})
 
     def test_only_planted_warnings(self):
-        """The warnings are the long chase, the stale VO2 max and the Swiss trip."""
+        """The warnings are the charity walk, the stale VO2 max and the US trip."""
         warnings = {
             (problem.column, problem.message.split(";")[0].split(" (")[0])
             for problem in self.report.all_problems
@@ -33,7 +33,7 @@ class SampleTest(unittest.TestCase):
             {
                 ("steps", "62,000 is outside the usual 0 to 60,000"),
                 ("vo2max_ml_kg_min", "unchanged since 2026-05-03"),
-                (None, "currency CHF is not the home currency GBP"),
+                (None, "currency USD is not the home currency GBP"),
             },
         )
 

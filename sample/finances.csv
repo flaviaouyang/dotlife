@@ -1,227 +1,184 @@
 date,category,account,currency,description,source,amount
-2026-03-03,groceries,card,GBP,,bank,-52.53
-2026-03-04,chemistry supplies,card,GBP,,bank,-31.37
-2026-03-04,cabs,card,GBP,,bank,-22.04
-2026-03-05,chemistry supplies,card,GBP,,bank,-34.72
-2026-03-05,cabs,card,GBP,,bank,-12.67
-2026-03-07,groceries,card,GBP,,bank,-56.32
-2026-03-08,client fees,current,GBP,,bank,407.25
-2026-03-09,chemistry supplies,card,GBP,,bank,-39.04
-2026-03-09,cabs,card,GBP,,bank,-21.4
-2026-03-10,groceries,card,GBP,,bank,-80.57
-2026-03-11,chemistry supplies,card,GBP,,bank,-33.86
-2026-03-11,cabs,card,GBP,,bank,-9.42
-2026-03-13,chemistry supplies,card,GBP,,bank,-25.09
-2026-03-13,cabs,card,GBP,,bank,-17.69
-2026-03-14,cabs,card,GBP,,bank,-24.88
-2026-03-14,groceries,card,GBP,,bank,-39.22
-2026-03-16,client fees,current,GBP,,bank,200.88
-2026-03-17,groceries,card,GBP,,bank,-80.98
-2026-03-18,client fees,current,GBP,,bank,155.21
-2026-03-18,chemistry supplies,card,GBP,,bank,-15.69
-2026-03-18,cabs,card,GBP,,bank,-19.96
-2026-03-19,cabs,card,GBP,,bank,-22.79
-2026-03-20,cabs,card,GBP,,bank,-10.81
-2026-03-21,cabs,card,GBP,,bank,-12.3
-2026-03-21,groceries,card,GBP,,bank,-36.4
-2026-03-22,cabs,card,GBP,,bank,-24.17
-2026-03-23,restaurants,card,GBP,,bank,-18.84
-2026-03-24,groceries,card,GBP,,bank,-51.16
-2026-03-25,chemistry supplies,card,GBP,,bank,-38.19
-2026-03-28,groceries,card,GBP,,bank,-61.73
-2026-03-28,restaurants,card,GBP,,bank,-10.08
-2026-03-30,chemistry supplies,card,GBP,,bank,-17.19
-2026-03-31,cabs,card,GBP,,bank,-7.06
-2026-03-31,groceries,card,GBP,,bank,-50.39
-2026-03-31,restaurants,card,GBP,,bank,-10.27
-2026-04-01,rent,current,GBP,,bank,-1400
-2026-04-01,newspapers,card,GBP,,bank,-12.99
-2026-04-01,chemistry supplies,card,GBP,,bank,-12.37
-2026-04-02,client fees,current,GBP,,bank,378.08
-2026-04-02,cabs,card,GBP,,bank,-9.63
-2026-04-04,client fees,current,GBP,,bank,367.64
-2026-04-04,groceries,card,GBP,,bank,-78.18
-2026-04-05,restaurants,card,GBP,,bank,-15.5
-2026-04-06,cabs,card,GBP,,bank,-7.12
-2026-04-07,chemistry supplies,card,GBP,,bank,-38.65
-2026-04-07,cabs,card,GBP,,bank,-15.08
-2026-04-07,groceries,card,GBP,,bank,-52.47
-2026-04-07,restaurants,card,GBP,,bank,-23.3
-2026-04-08,chemistry supplies,card,GBP,,bank,-39.56
-2026-04-09,client fees,current,GBP,,bank,216.24
-2026-04-09,cabs,card,GBP,,bank,-16.39
-2026-04-11,groceries,card,GBP,,bank,-36.97
-2026-04-12,cabs,card,GBP,,bank,-13.32
-2026-04-14,cabs,card,GBP,,bank,-18.36
-2026-04-14,groceries,card,GBP,,bank,-74.08
-2026-04-15,client fees,current,GBP,,bank,227.38
-2026-04-15,chemistry supplies,card,GBP,,bank,-22.81
-2026-04-15,cabs,card,GBP,,bank,-17.65
-2026-04-18,cabs,card,GBP,,bank,-23.12
-2026-04-18,groceries,card,GBP,,bank,-61.52
-2026-04-18,restaurants,card,GBP,,bank,-29.32
-2026-04-19,client fees,current,GBP,,bank,340.35
-2026-04-20,chemistry supplies,card,GBP,,bank,-32.85
-2026-04-20,restaurants,card,GBP,,bank,-12.68
-2026-04-21,groceries,card,GBP,,bank,-43.13
-2026-04-22,chemistry supplies,card,GBP,,bank,-34.08
-2026-04-24,cabs,card,GBP,,bank,-18.36
-2026-04-25,cabs,card,GBP,,bank,-24.34
-2026-04-25,groceries,card,GBP,,bank,-75.44
-2026-04-26,restaurants,card,GBP,,bank,-11.03
-2026-04-28,groceries,card,GBP,,bank,-66.92
-2026-04-29,chemistry supplies,card,GBP,,bank,-17.27
-2026-04-30,cabs,card,GBP,,bank,-12.19
-2026-05-01,rent,current,GBP,,bank,-1400
-2026-05-01,newspapers,card,GBP,,bank,-12.99
-2026-05-01,restaurants,card,GBP,,bank,-20.31
-2026-05-02,cabs,card,GBP,,bank,-14.55
-2026-05-02,groceries,card,GBP,,bank,-61.41
-2026-05-04,cabs,card,GBP,,bank,-6.26
-2026-05-05,groceries,card,GBP,,bank,-63.81
-2026-05-06,chemistry supplies,card,GBP,,bank,-26.23
-2026-05-09,groceries,card,GBP,,bank,-63.98
-2026-05-09,restaurants,card,GBP,,bank,-11.95
-2026-05-10,cabs,card,GBP,,bank,-16.45
-2026-05-11,cabs,card,GBP,,bank,-16.06
-2026-05-12,chemistry supplies,card,GBP,,bank,-33.51
-2026-05-12,groceries,card,GBP,,bank,-63.36
-2026-05-13,chemistry supplies,card,GBP,,bank,-30.65
-2026-05-13,restaurants,card,GBP,,bank,-8.32
-2026-05-14,chemistry supplies,card,GBP,,bank,-29.87
-2026-05-14,cabs,card,GBP,,bank,-17.97
-2026-05-16,client fees,current,GBP,,bank,243.7
-2026-05-16,groceries,card,GBP,,bank,-72.61
-2026-05-16,restaurants,card,GBP,,bank,-15.34
-2026-05-17,cabs,card,GBP,,bank,-23.32
-2026-05-18,cabs,card,GBP,,bank,-13.7
-2026-05-19,client fees,current,GBP,,bank,558.32
-2026-05-19,groceries,card,GBP,,bank,-76.63
-2026-05-20,chemistry supplies,card,GBP,,bank,-24.27
-2026-05-21,cabs,card,GBP,,bank,-16.7
-2026-05-22,cabs,card,GBP,,bank,-19.78
-2026-05-22,restaurants,card,GBP,,bank,-24.5
-2026-05-23,cabs,card,GBP,,bank,-9.1
-2026-05-23,groceries,card,GBP,,bank,-36.41
-2026-05-25,restaurants,card,GBP,,bank,-15.43
-2026-05-26,groceries,card,GBP,,bank,-52.15
-2026-05-27,chemistry supplies,card,GBP,,bank,-24.36
-2026-05-27,cabs,card,GBP,,bank,-9.25
-2026-05-28,cabs,card,GBP,,bank,-17.08
-2026-05-29,client fees,current,GBP,,bank,341.71
-2026-05-29,restaurants,card,GBP,,bank,-18.45
-2026-05-30,cabs,card,GBP,,bank,-18.36
-2026-05-30,groceries,card,GBP,,bank,-78.14
-2026-05-31,client fees,current,GBP,,bank,250.01
-2026-05-31,cabs,card,GBP,,bank,-9.31
-2026-06-01,rent,current,GBP,,bank,-1400
-2026-06-01,newspapers,card,GBP,,bank,-12.99
-2026-06-01,chemistry supplies,card,GBP,,bank,-12.92
-2026-06-01,restaurants,card,GBP,,bank,-25.63
-2026-06-02,groceries,card,GBP,,bank,-55.68
-2026-06-03,client fees,current,GBP,,bank,325.69
-2026-06-03,chemistry supplies,card,GBP,,bank,-15.91
-2026-06-03,cabs,card,GBP,,bank,-20.83
-2026-06-04,chemistry supplies,card,GBP,,bank,-19.5
-2026-06-06,client fees,current,GBP,,bank,168.2
-2026-06-06,groceries,card,GBP,,bank,-72.31
-2026-06-09,cabs,card,GBP,,bank,-18.34
-2026-06-09,groceries,card,GBP,,bank,-41.6
-2026-06-10,chemistry supplies,card,GBP,,bank,-15.08
-2026-06-12,client fees,current,GBP,,bank,250.47
-2026-06-13,chemistry supplies,card,GBP,,bank,-25.93
-2026-06-13,groceries,card,GBP,,bank,-76.82
-2026-06-15,client fees,current,GBP,,bank,285.88
-2026-06-16,groceries,card,GBP,,bank,-83.72
-2026-06-16,restaurants,card,GBP,,bank,-9.69
-2026-06-17,restaurants,card,GBP,,bank,-103.59
-2026-06-17,chemistry supplies,card,GBP,,bank,-26.64
-2026-06-18,restaurants,card,GBP,,bank,-9.67
-2026-06-20,client fees,current,GBP,,bank,452.5
-2026-06-20,groceries,card,GBP,,bank,-62.83
-2026-06-21,client fees,current,GBP,,bank,219.56
-2026-06-23,groceries,card,GBP,,bank,-63.31
-2026-06-24,client fees,current,GBP,,bank,598.86
-2026-06-24,chemistry supplies,card,GBP,,bank,-38.36
-2026-06-24,cabs,card,GBP,,bank,-17.9
-2026-06-25,client fees,current,GBP,,bank,588.21
-2026-06-26,client fees,current,GBP,,bank,168
-2026-06-27,cabs,card,GBP,,bank,-22.11
-2026-06-27,groceries,card,GBP,,bank,-44.25
-2026-06-27,restaurants,card,GBP,,bank,-25.48
-2026-06-29,restaurants,card,GBP,,bank,-20.37
-2026-06-30,groceries,card,GBP,,bank,-60.2
-2026-07-01,rent,current,GBP,,bank,-1400
-2026-07-01,newspapers,card,GBP,,bank,-12.99
-2026-07-01,chemistry supplies,card,GBP,,bank,-14.98
-2026-07-01,cabs,card,GBP,,bank,-18.22
-2026-07-03,client fees,current,GBP,,bank,336.67
-2026-07-03,cabs,card,GBP,,bank,-13.68
-2026-07-04,cabs,card,GBP,,bank,-24.98
-2026-07-04,groceries,card,GBP,,bank,-76.35
-2026-07-05,restaurants,card,GBP,,bank,-16.15
-2026-07-06,client fees,current,GBP,,bank,532.49
-2026-07-07,chemistry supplies,card,GBP,,bank,-34.06
-2026-07-07,cabs,card,GBP,,bank,-8.62
-2026-07-07,groceries,card,GBP,,bank,-59.59
-2026-07-08,chemistry supplies,card,GBP,,bank,-27.76
-2026-07-09,client fees,current,GBP,,bank,487.46
-2026-07-09,chemistry supplies,card,GBP,,bank,-34.85
-2026-07-10,travel,card,CHF,,bank,-65.35
-2026-07-11,travel,card,CHF,,bank,-29.66
-2026-07-12,travel,card,CHF,,bank,-70.37
-2026-07-13,travel,card,CHF,,bank,-58.6
-2026-07-14,client fees,current,GBP,,bank,454.11
-2026-07-14,travel,card,CHF,,bank,-58.14
-2026-07-15,travel,card,CHF,,bank,-71.75
-2026-07-16,travel,card,CHF,,bank,-64.18
-2026-07-17,travel,card,CHF,,bank,-69.27
-2026-07-18,groceries,card,GBP,,bank,-79.59
-2026-07-18,restaurants,card,GBP,,bank,-25.64
-2026-07-21,chemistry supplies,card,GBP,,bank,-19.42
-2026-07-21,cabs,card,GBP,,bank,-20.34
-2026-07-21,groceries,card,GBP,,bank,-52.97
-2026-07-22,chemistry supplies,card,GBP,,bank,-16.92
-2026-07-24,client fees,current,GBP,,bank,150
-2026-07-25,cabs,card,GBP,,bank,-11.71
-2026-07-25,groceries,card,GBP,,bank,-36.41
-2026-07-26,restaurants,card,GBP,,bank,-17.94
-2026-07-28,groceries,card,GBP,,bank,-53.29
-2026-07-29,chemistry supplies,card,GBP,,bank,-12.54
-2026-07-30,cabs,card,GBP,,bank,-14.38
-2026-07-30,restaurants,card,GBP,,bank,-14.11
-2026-07-31,client fees,current,GBP,,bank,518.35
-2026-07-31,chemistry supplies,card,GBP,,bank,-18.77
-2026-08-01,rent,current,GBP,,bank,-1400
-2026-08-01,newspapers,card,GBP,,bank,-12.99
-2026-08-01,groceries,card,GBP,,bank,-55.58
-2026-08-03,cabs,card,GBP,,bank,-8.84
-2026-08-04,groceries,card,GBP,,bank,-49.97
-2026-08-05,chemistry supplies,card,GBP,,bank,-30.07
-2026-08-06,client fees,current,GBP,,bank,224.12
-2026-08-06,restaurants,card,GBP,,bank,-19.85
-2026-08-07,cabs,card,GBP,,bank,-16.16
-2026-08-08,groceries,card,GBP,,bank,-68.01
-2026-08-10,client fees,current,GBP,,bank,282.01
-2026-08-11,groceries,card,GBP,,bank,-39.96
-2026-08-12,client fees,current,GBP,,bank,595.75
-2026-08-12,chemistry supplies,card,GBP,,bank,-16.99
-2026-08-14,cabs,card,GBP,,bank,-23.62
-2026-08-15,cabs,card,GBP,,bank,-11.85
-2026-08-15,groceries,card,GBP,,bank,-52.03
-2026-08-17,chemistry supplies,card,GBP,,bank,-28.01
-2026-08-18,groceries,card,GBP,,bank,-75.31
-2026-08-19,chemistry supplies,card,GBP,,bank,-12.83
-2026-08-20,cabs,card,GBP,,bank,-6.82
-2026-08-21,cabs,card,GBP,,bank,-13.06
-2026-08-22,groceries,card,GBP,,bank,-74.26
-2026-08-23,chemistry supplies,card,GBP,,bank,-38.68
-2026-08-25,client fees,current,GBP,,bank,214.03
-2026-08-25,cabs,card,GBP,,bank,-7.59
-2026-08-25,groceries,card,GBP,,bank,-82.26
-2026-08-25,restaurants,card,GBP,,bank,-29.23
-2026-08-26,client fees,current,GBP,,bank,253.29
-2026-08-26,chemistry supplies,card,GBP,,bank,-19.37
-2026-08-28,chemistry supplies,card,GBP,,bank,-28.38
-2026-08-29,groceries,card,GBP,,bank,-60.67
-2026-08-30,cabs,card,GBP,,bank,-17.26
+2026-03-02,coffee,card,GBP,,bank,-4.94
+2026-03-03,groceries,card,GBP,,bank,-74.55
+2026-03-05,coffee,card,GBP,,bank,-4.69
+2026-03-06,coffee,card,GBP,,bank,-4.62
+2026-03-07,groceries,card,GBP,,bank,-68.32
+2026-03-09,coffee,card,GBP,,bank,-4.71
+2026-03-10,coffee,card,GBP,,bank,-3.3
+2026-03-10,groceries,card,GBP,,bank,-67.49
+2026-03-11,coffee,card,GBP,,bank,-4.57
+2026-03-12,coffee,card,GBP,,bank,-4.62
+2026-03-14,groceries,card,GBP,,bank,-74.55
+2026-03-16,coffee,card,GBP,,bank,-4.95
+2026-03-17,coffee,card,GBP,,bank,-4.77
+2026-03-17,groceries,card,GBP,,bank,-58.38
+2026-03-17,restaurants,card,GBP,,bank,-21.53
+2026-03-19,coffee,card,GBP,,bank,-4.99
+2026-03-20,coffee,card,GBP,,bank,-4.52
+2026-03-21,groceries,card,GBP,,bank,-40.65
+2026-03-23,coffee,card,GBP,,bank,-3.54
+2026-03-24,groceries,card,GBP,,bank,-35.58
+2026-03-24,restaurants,card,GBP,,bank,-11.81
+2026-03-25,salary,current,GBP,,bank,4200
+2026-03-27,coffee,card,GBP,,bank,-4.73
+2026-03-28,groceries,card,GBP,,bank,-74.51
+2026-03-29,restaurants,card,GBP,,bank,-15.29
+2026-03-30,coffee,card,GBP,,bank,-4.72
+2026-03-30,restaurants,card,GBP,,bank,-11.17
+2026-03-31,groceries,card,GBP,,bank,-84.33
+2026-04-01,rent,current,GBP,,bank,-1650
+2026-04-01,climbing gym,card,GBP,,bank,-65
+2026-04-01,books,card,GBP,,bank,-27.25
+2026-04-04,groceries,card,GBP,,bank,-74.94
+2026-04-07,groceries,card,GBP,,bank,-62.54
+2026-04-08,restaurants,card,GBP,,bank,-10.08
+2026-04-09,coffee,card,GBP,,bank,-3.6
+2026-04-10,coffee,card,GBP,,bank,-3.06
+2026-04-11,groceries,card,GBP,,bank,-62.41
+2026-04-11,restaurants,card,GBP,,bank,-8.26
+2026-04-12,books,card,GBP,,bank,-20.77
+2026-04-12,restaurants,card,GBP,,bank,-10.27
+2026-04-13,coffee,card,GBP,,bank,-3.03
+2026-04-14,coffee,card,GBP,,bank,-4.01
+2026-04-14,groceries,card,GBP,,bank,-46.83
+2026-04-16,coffee,card,GBP,,bank,-4.39
+2026-04-18,groceries,card,GBP,,bank,-58.18
+2026-04-19,restaurants,card,GBP,,bank,-15.5
+2026-04-20,coffee,card,GBP,,bank,-3.35
+2026-04-20,books,card,GBP,,bank,-12.07
+2026-04-21,coffee,card,GBP,,bank,-3.14
+2026-04-21,groceries,card,GBP,,bank,-41.77
+2026-04-22,coffee,card,GBP,,bank,-3.08
+2026-04-24,coffee,card,GBP,,bank,-3.29
+2026-04-24,restaurants,card,GBP,,bank,-20.03
+2026-04-25,salary,current,GBP,,bank,4200
+2026-04-25,groceries,card,GBP,,bank,-81.41
+2026-04-28,coffee,card,GBP,,bank,-3.46
+2026-04-28,groceries,card,GBP,,bank,-49.72
+2026-04-29,coffee,card,GBP,,bank,-4.1
+2026-05-01,rent,current,GBP,,bank,-1650
+2026-05-01,climbing gym,card,GBP,,bank,-65
+2026-05-02,groceries,card,GBP,,bank,-71.27
+2026-05-02,restaurants,card,GBP,,bank,-11.78
+2026-05-03,restaurants,card,GBP,,bank,-21.49
+2026-05-05,groceries,card,GBP,,bank,-57.4
+2026-05-08,coffee,card,GBP,,bank,-3.32
+2026-05-08,restaurants,card,GBP,,bank,-17.31
+2026-05-09,groceries,card,GBP,,bank,-68.86
+2026-05-10,restaurants,card,GBP,,bank,-24.38
+2026-05-11,coffee,card,GBP,,bank,-3.08
+2026-05-12,coffee,card,GBP,,bank,-4.66
+2026-05-12,groceries,card,GBP,,bank,-71.39
+2026-05-14,coffee,card,GBP,,bank,-4.17
+2026-05-16,groceries,card,GBP,,bank,-64.18
+2026-05-17,restaurants,card,GBP,,bank,-29.23
+2026-05-19,groceries,card,GBP,,bank,-42.55
+2026-05-19,restaurants,card,GBP,,bank,-28.89
+2026-05-20,coffee,card,GBP,,bank,-3.73
+2026-05-21,coffee,card,GBP,,bank,-4.27
+2026-05-22,coffee,card,GBP,,bank,-3.38
+2026-05-23,groceries,card,GBP,,bank,-66.44
+2026-05-25,salary,current,GBP,,bank,4200
+2026-05-25,coffee,card,GBP,,bank,-4.26
+2026-05-25,restaurants,card,GBP,,bank,-20.31
+2026-05-26,groceries,card,GBP,,bank,-45.65
+2026-05-27,coffee,card,GBP,,bank,-3.37
+2026-05-28,coffee,card,GBP,,bank,-3.79
+2026-05-29,coffee,card,GBP,,bank,-3.03
+2026-05-30,groceries,card,GBP,,bank,-67.86
+2026-06-01,rent,current,GBP,,bank,-1650
+2026-06-01,climbing gym,card,GBP,,bank,-65
+2026-06-01,coffee,card,GBP,,bank,-4.11
+2026-06-02,coffee,card,GBP,,bank,-3.83
+2026-06-02,groceries,card,GBP,,bank,-84.84
+2026-06-05,coffee,card,GBP,,bank,-3.36
+2026-06-06,groceries,card,GBP,,bank,-62.49
+2026-06-08,coffee,card,GBP,,bank,-4.06
+2026-06-09,coffee,card,GBP,,bank,-4.54
+2026-06-09,groceries,card,GBP,,bank,-63.36
+2026-06-10,coffee,card,GBP,,bank,-4.33
+2026-06-10,restaurants,card,GBP,,bank,-8.32
+2026-06-12,coffee,card,GBP,,bank,-4.26
+2026-06-13,groceries,card,GBP,,bank,-77.21
+2026-06-14,books,card,GBP,,bank,-17.29
+2026-06-15,coffee,card,GBP,,bank,-4.5
+2026-06-16,coffee,card,GBP,,bank,-3.72
+2026-06-16,groceries,card,GBP,,bank,-80.59
+2026-06-17,restaurants,card,GBP,,bank,-131.17
+2026-06-17,coffee,card,GBP,,bank,-3.31
+2026-06-18,coffee,card,GBP,,bank,-4.81
+2026-06-20,groceries,card,GBP,,bank,-67.8
+2026-06-21,restaurants,card,GBP,,bank,-8.52
+2026-06-22,coffee,card,GBP,,bank,-4.19
+2026-06-23,coffee,card,GBP,,bank,-4.45
+2026-06-23,books,card,GBP,,bank,-36.25
+2026-06-23,groceries,card,GBP,,bank,-45.01
+2026-06-24,coffee,card,GBP,,bank,-3.33
+2026-06-24,books,card,GBP,,bank,-28.03
+2026-06-25,salary,current,GBP,,bank,4200
+2026-06-25,coffee,card,GBP,,bank,-3.63
+2026-06-26,coffee,card,GBP,,bank,-4.28
+2026-06-27,groceries,card,GBP,,bank,-77.14
+2026-06-29,restaurants,card,GBP,,bank,-11.77
+2026-06-30,coffee,card,GBP,,bank,-4.71
+2026-06-30,groceries,card,GBP,,bank,-40.77
+2026-07-01,rent,current,GBP,,bank,-1650
+2026-07-01,climbing gym,card,GBP,,bank,-65
+2026-07-01,coffee,card,GBP,,bank,-3.16
+2026-07-04,groceries,card,GBP,,bank,-78.14
+2026-07-06,books,card,GBP,,bank,-16.11
+2026-07-07,coffee,card,GBP,,bank,-3.05
+2026-07-07,books,card,GBP,,bank,-24.45
+2026-07-07,groceries,card,GBP,,bank,-35.64
+2026-07-09,coffee,card,GBP,,bank,-4.62
+2026-07-09,books,card,GBP,,bank,-23.66
+2026-07-09,restaurants,card,GBP,,bank,-8.62
+2026-07-11,books,card,GBP,,bank,-19.38
+2026-07-11,groceries,card,GBP,,bank,-63.97
+2026-07-13,coffee,card,GBP,,bank,-3.88
+2026-07-13,restaurants,card,GBP,,bank,-15
+2026-07-14,groceries,card,GBP,,bank,-68.39
+2026-07-15,coffee,card,GBP,,bank,-4.83
+2026-07-17,restaurants,card,GBP,,bank,-22.29
+2026-07-18,groceries,card,GBP,,bank,-78.3
+2026-07-21,coffee,card,GBP,,bank,-3.77
+2026-07-21,groceries,card,GBP,,bank,-46.16
+2026-07-21,restaurants,card,GBP,,bank,-18.73
+2026-07-22,coffee,card,GBP,,bank,-3.56
+2026-07-22,books,card,GBP,,bank,-27.41
+2026-07-25,salary,current,GBP,,bank,4200
+2026-07-25,groceries,card,GBP,,bank,-50.1
+2026-07-27,coffee,card,GBP,,bank,-4.3
+2026-07-28,coffee,card,GBP,,bank,-3.15
+2026-07-28,groceries,card,GBP,,bank,-48.59
+2026-07-30,restaurants,card,GBP,,bank,-9.67
+2026-08-01,rent,current,GBP,,bank,-1650
+2026-08-01,climbing gym,card,GBP,,bank,-65
+2026-08-01,groceries,card,GBP,,bank,-38.37
+2026-08-03,travel,card,USD,,bank,-61.18
+2026-08-04,travel,card,USD,,bank,-61.88
+2026-08-05,travel,card,USD,,bank,-36.92
+2026-08-06,travel,card,USD,,bank,-35.05
+2026-08-07,travel,card,USD,,bank,-38.31
+2026-08-08,travel,card,USD,,bank,-63.29
+2026-08-09,travel,card,USD,,bank,-38.57
+2026-08-10,travel,card,USD,,bank,-88.46
+2026-08-11,groceries,card,GBP,,bank,-70.38
+2026-08-13,coffee,card,GBP,,bank,-3.28
+2026-08-14,coffee,card,GBP,,bank,-4.25
+2026-08-14,restaurants,card,GBP,,bank,-29.42
+2026-08-15,groceries,card,GBP,,bank,-79.76
+2026-08-16,books,card,GBP,,bank,-11.4
+2026-08-18,groceries,card,GBP,,bank,-77.4
+2026-08-19,coffee,card,GBP,,bank,-4.59
+2026-08-20,coffee,card,GBP,,bank,-3.43
+2026-08-22,groceries,card,GBP,,bank,-53.06
+2026-08-24,coffee,card,GBP,,bank,-3.21
+2026-08-24,books,card,GBP,,bank,-32.51
+2026-08-25,salary,current,GBP,,bank,4200
+2026-08-25,coffee,card,GBP,,bank,-4.68
+2026-08-25,groceries,card,GBP,,bank,-46.38
+2026-08-25,restaurants,card,GBP,,bank,-17.13
+2026-08-26,coffee,card,GBP,,bank,-3.5
+2026-08-29,groceries,card,GBP,,bank,-58.39

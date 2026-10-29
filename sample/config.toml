@@ -1,4 +1,4 @@
-# Holmes's settings. dotlife uses this file, not the one in the repo root,
+# Alice's settings. dotlife uses this file, not the one in the repo root,
 # whenever it reads this folder.
 
 format_version = 1
@@ -13,11 +13,11 @@ stale_after_days = { vo2max_ml_kg_min = 90 }
 
 [finances]
 home_currency = "GBP"
-budgets = { "chemistry supplies" = 150, cabs = 120, restaurants = 80 }
+budgets = { coffee = 60, books = 40, restaurants = 150 }
 
-[custom.experiments]
-label = "Chemistry experiments"
-unit = "experiments"
+[custom.puzzles]
+label = "Puzzles solved"
+unit = "puzzles"
 summary = "sum"
 minimum = 0
 plausible = [0, 10]
