@@ -15,6 +15,7 @@ CARD_STYLE = """
 [class*="st-key-card-"]:hover [class*="st-key-menu-"],
 [class*="st-key-card-"]:focus-within [class*="st-key-menu-"] { opacity: 1; }
 @media (hover: none) { [class*="st-key-card-"] [class*="st-key-menu-"] { opacity: 1; } }
+[data-testid="stMain"] span.stMarkdownBadge { padding: 0.125rem 0.5rem; }
 </style>
 """
 
