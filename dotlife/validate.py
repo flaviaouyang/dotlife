@@ -1,6 +1,5 @@
 import csv
 import json
-import re
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from datetime import date, timedelta
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from dotlife.config import all_categories, context_for, plausible_range
+from dotlife.journal import journal_date
 from dotlife.schema import (
     FORMAT_VERSION,
     Category,
@@ -18,8 +18,7 @@ from dotlife.schema import (
     Row,
     row_parser,
 )
-
-JOURNAL_FILE = re.compile(r"(\d{4}-\d{2}-\d{2})\.md")
+from dotlife.summaries import last_change
 
 
 class Severity(StrEnum):
@@ -257,26 +256,9 @@ def last_change_dates(
 
     Returns:
         Per metric with readings, the first date of its final run of equal values.
-
-    Example:
-        >>> readings = {"vo2": [(date(2026, 1, 1), 40.0), (date(2026, 2, 1), 41.0),
-        ...                     (date(2026, 3, 1), 41.0)]}
-        >>> last_change_dates(readings)
-        {'vo2': datetime.date(2026, 2, 1)}
     """
-    changes = {}
-    for column, pairs in readings.items():
-        if not pairs:
-            continue
-        ordered = sorted(pairs)
-        latest = ordered[-1][1]
-        changed = ordered[-1][0]
-        for day, value in reversed(ordered):
-            if value != latest:
-                break
-            changed = day
-        changes[column] = changed
-    return changes
+    changes = {column: last_change(dict(pairs)) for column, pairs in readings.items()}
+    return {column: day for column, day in changes.items() if day is not None}
 
 
 def duplicate_problem(
@@ -370,24 +352,6 @@ def validate_csv(category: Category, path: Path, context: Context) -> FileReport
         report.gaps = find_gaps(dates)
     report.last_changes = last_change_dates(readings)
     return report
-
-
-def journal_date(name: str) -> date | None:
-    """Return the date a journal file is named after.
-
-    Args:
-        name: A file name, e.g. ``2026-03-08.md``.
-
-    Returns:
-        The date, or None when the name isn't a real ``YYYY-MM-DD.md`` date.
-    """
-    match = JOURNAL_FILE.fullmatch(name)
-    if match is None:
-        return None
-    try:
-        return date.fromisoformat(match[1])
-    except ValueError:
-        return None
 
 
 def validate_journal(category: Category, folder: Path) -> FileReport:
