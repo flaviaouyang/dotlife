@@ -15,6 +15,7 @@ from dotlife.config import (
     plausible_range,
 )
 from dotlife.reflections import file_year, parse_reflections, settings
+from dotlife.rules import inferred_names_input
 from dotlife.schema import (
     FORMAT_VERSION,
     Category,
@@ -221,7 +222,7 @@ def row_problems(
     ]
     problems += [
         Problem(Severity.ERROR, message)
-        for check in category.checks
+        for check in (inferred_names_input, *category.checks)
         if (message := check(row, context)) is not None
     ]
     problems += [

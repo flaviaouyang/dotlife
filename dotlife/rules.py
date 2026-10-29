@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import cast
 
-from dotlife.schema import Context, Row
+from dotlife.schema import Context, Row, inferred_from
 
 
 def local_date(row: Row, column: str, context: Context) -> date:
@@ -108,3 +108,19 @@ def watch_worn(row: Row, context: Context) -> bool:
         or sedentary is None
         or sedentary >= context.options["watch_off_sedentary_min"]
     )
+
+
+def inferred_names_input(row: Row, context: Context) -> str | None:
+    """An inferred `source` names its input, e.g. `inferred-reflections`.
+
+    Args:
+        row: A parsed row.
+        context: Unused; part of the check signature.
+
+    Returns:
+        An error when an inferred source doesn't name its input, else None.
+    """
+    source = row.get("source")
+    if not isinstance(source, str) or inferred_from(source) != "":
+        return None
+    return f"source {source!r} must name its input, e.g. inferred-reflections"

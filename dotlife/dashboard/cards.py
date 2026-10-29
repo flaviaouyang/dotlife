@@ -19,7 +19,7 @@ from dotlife.dashboard.display import (
 )
 from dotlife.load import Dataset
 from dotlife.periods import Period, period_end
-from dotlife.schema import Aggregate, Category, Grain, Row
+from dotlife.schema import Aggregate, Category, Grain, Row, inferred_from
 from dotlife.summaries import (
     Assessment,
     Daily,
@@ -599,10 +599,40 @@ def skipped_days(spec: CardSpec, dataset: Dataset, selection: Selection) -> int:
     )
 
 
+def inferred_note(spec: CardSpec, dataset: Dataset, start: date, end: date) -> str:
+    """Say how many days' values were inferred rather than recorded, and from what.
+
+    Args:
+        spec: The card or chart.
+        dataset: The loaded data.
+        start: First day to look at.
+        end: Day after the last.
+
+    Returns:
+        E.g. "3 of 7 days inferred from reflections", or empty when none were.
+    """
+    if spec.column is None or spec.category == "reflections":
+        return ""
+    days: set[date] = set()
+    inferred: dict[date, str] = {}
+    for row in dataset.rows[spec.category]:
+        day = cast(date, row["date"])
+        if not start <= day < end or row.get(spec.column) is None:
+            continue
+        days.add(day)
+        origin = inferred_from(cast(str, row.get("source", "")))
+        if origin is not None:
+            inferred[day] = origin
+    if not inferred:
+        return ""
+    origins = " and ".join(sorted(set(inferred.values())))
+    return f"{len(inferred)} of {len(days)} days inferred from {origins}"
+
+
 def card_note(
     spec: CardSpec, dataset: Dataset, selection: Selection, reading: Reading
 ) -> str:
-    """Write a card's extra context: breakdown, watch-off days, staleness.
+    """Write a card's extra context: breakdown, watch-off days, staleness, inference.
 
     Args:
         spec: The card.
@@ -627,6 +657,7 @@ def card_note(
         f"Unchanged since {changed.day} {changed:%b}; left out of comparisons"
         if changed is not None
         else "",
+        inferred_note(spec, dataset, selection.start, selection.end),
     ]
     return ". ".join(note for note in notes if note)
 

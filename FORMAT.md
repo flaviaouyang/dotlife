@@ -40,6 +40,20 @@ Format version 1, set as `format_version` in `config.toml`. This file is the sou
 - `source` says where a row came from (e.g. `watch`, `scale`, `manual`). When two sources report the same metric, keep the one `sources.md` ranks higher. Weight is the exception: a smart-scale reading wins on any day it has one.
 - Record a reading only when the source reports a new one. If a device keeps repeating an old value, don't write it again.
 
+## Inferred values
+
+A value can be worked out from other data instead of recorded: dining out counted from bank transactions, or mood read from reflections. That is inference. It's allowed only on these terms, so an inferred value never passes for a recorded one:
+
+- **Opt in, per metric.** Nothing is inferred unless the person chose it, and `sources.md` says which metrics are inferred and from what.
+- **Labelled.** `source` is `inferred-<input>`, e.g. `inferred-reflections` or `inferred-finances`. The validator rejects a bare `inferred`, and the dashboard says how many days of a card or chart were inferred.
+- **Last resort.** An inferred value never replaces a recorded one; it only fills a day nothing recorded.
+- **Rules before AI.** If a script can decide it (a transaction's category or merchant code), use the script. An AI agent only infers what needs reading, like text.
+- **Repeatable.** An AI's instructions live in a file in the repo, e.g. `prompts/mood.md`, so every run asks the same question.
+- **Written once.** A day already inferred isn't inferred again unless the person asks, so past values don't drift.
+- **No evidence, no value.** When the input says nothing about the metric that day, the cell stays empty.
+
+[docs/sources/inference.md](docs/sources/inference.md) shows how to set it up.
+
 ## Limits, warnings and trust
 
 Every number is checked in up to three ways:

@@ -43,8 +43,8 @@ A step only an AI agent can do (a source reachable only through a connector, or 
 
 ## Data rules
 
-- **Missing data stays missing.** Never estimate, interpolate, forward-fill or invent a value. Leave the cell empty and report the gap.
-- **Scripts over AI.** If a source can be scripted, write or run a script. Use a connector only where a script can't reach the source, and transcribe its values exactly.
+- **Missing data stays missing.** Never estimate, interpolate, forward-fill or invent a value. Leave the cell empty and report the gap. The one exception is inference the person opted into, on the terms in `FORMAT.md` ("Inferred values"): labelled `inferred-<input>`, never over a recorded value, and empty without evidence.
+- **Scripts over AI.** Every source gets a script that `make fresh` can run without an agent. A connector needs an agent, so use one only for a one-off backfill a script can't do, transcribe its values exactly, and note it in `sources.md`.
 - **One source per metric.** When two sources report the same metric, keep the one `sources.md` ranks higher. For weight, a smart-scale reading wins on any day it has one.
 - **Dates are local.** Weeks run Monday to Sunday in the time zone in `config.toml`. A night's sleep counts toward the date the person woke up.
 - **Record only new readings.** If a source keeps repeating an old value (e.g. VO2 max that only updates after an outdoor run), don't write it again as a new reading.

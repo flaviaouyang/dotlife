@@ -60,6 +60,26 @@ DATE = Field("date", Kind.DATE)
 START = Field("start", Kind.TIMESTAMP)
 END = Field("end", Kind.TIMESTAMP)
 SOURCE = Field("source", Kind.TEXT)
+INFERRED = "inferred"
+
+
+def inferred_from(source: str) -> str | None:
+    """Say what an inferred value was worked out from, if it was inferred.
+
+    Args:
+        source: A row's ``source``.
+
+    Returns:
+        The input, e.g. ``reflections`` for ``inferred-reflections``; an empty
+        string for a bare ``inferred``; None for a recorded value.
+
+    Example:
+        >>> inferred_from("inferred-reflections"), inferred_from("oura")
+        ('reflections', None)
+    """
+    if not source.startswith(INFERRED):
+        return None
+    return source.removeprefix(INFERRED).removeprefix("-")
 
 
 @dataclass(frozen=True, slots=True)

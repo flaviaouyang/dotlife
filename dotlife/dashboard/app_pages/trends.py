@@ -5,6 +5,7 @@ import streamlit as st
 
 from dotlife.dashboard.cards import (
     display_goal,
+    inferred_note,
     period_target,
     read,
     trend_specs,
@@ -118,6 +119,11 @@ else:
                     "stale: the readings are shown, but it isn't compared with its "
                     "usual range."
                 )
+            inferred = inferred_note(
+                spec, data, points[0][0], period_end(points[-1][0], chosen.period)
+            )
+            if inferred:
+                st.caption(f"{inferred}, not recorded.")
             st.altair_chart(
                 trend_chart(points, reading.unit, reading.usual, shown, goals),
                 alt=f"{spec.label} by {chosen.period.value}, with its usual range",

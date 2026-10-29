@@ -160,6 +160,22 @@ class CsvValidationTest(ValidatorTestCase):
             (3, "duplicate of line 2 (date must be unique)"),
         )
 
+    def test_inferred_source_names_its_input(self):
+        """A bare inferred source is an error; inferred-<input> is fine."""
+        write_csv(
+            self.data,
+            "mood.csv",
+            [
+                ["date", "source", "mood"],
+                ["2026-01-05", "inferred", "4"],
+                ["2026-01-06", "inferred-reflections", "3"],
+            ],
+        )
+        self.assertEqual(
+            self.messages(self.validate(), Severity.ERROR),
+            ["source 'inferred' must name its input, e.g. inferred-reflections"],
+        )
+
     def test_time_in_a_day(self):
         """Hours across categories can't add up to more than a day."""
         write_csv(

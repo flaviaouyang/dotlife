@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from typing import cast
@@ -159,3 +160,34 @@ class CardChartRenderTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InferredNoteTest(unittest.TestCase):
+    """Cards say when values were inferred rather than recorded."""
+
+    def test_mood_inferred_on_some_days(self):
+        """Inferred days are counted against days with a value; the input named."""
+        dataset = load_dataset(find_data(ROOT / "config.toml", ROOT / "sample"))
+        inferred_days = {date(2026, 8, day) for day in (24, 25, 26)}
+        mood = [
+            row | {"source": "inferred-reflections"}
+            if row["date"] in inferred_days
+            else row
+            for row in dataset.rows["mood"]
+        ]
+        dataset = replace(dataset, rows={**dataset.rows, "mood": mood})
+        selection = Selection(Period.WEEK, date(2026, 8, 24), False)
+        notes = {
+            card.label: card.note for card in build_overview(dataset, selection).cards
+        }
+        week = {
+            day
+            for row in mood
+            if date(2026, 8, 24)
+            <= (day := cast(date, row["date"]))
+            <= date(2026, 8, 30)
+            and row.get("mood") is not None
+        }
+        expected = f"{len(week & inferred_days)} of {len(week)} days inferred"
+        self.assertIn(f"{expected} from reflections", notes["Mood"])
+        self.assertNotIn("inferred", notes["Steps"])
