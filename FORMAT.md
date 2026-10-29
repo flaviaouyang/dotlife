@@ -5,6 +5,7 @@ Format version 1, set as `format_version` in `config.toml`. This file is the sou
 ## Files
 
 - All data lives in one folder, `data_dir` in `config.toml` (`data/` by default).
+- A data folder can hold its own `config.toml`, which then wins over the repo's. The sample data does this, so it keeps its own time zone.
 - Each category has its own file, named in its section below. A category whose file is missing simply doesn't show; nothing else breaks.
 - `enabled = false` in a category's config section switches it off everywhere: the dashboard hides it, the validator skips it, and sync never fetches it.
 - Data files are CSV (UTF-8, comma-separated, with a header row), except the journal, which is Markdown.

@@ -1,6 +1,7 @@
 import re
 import tomllib
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -190,3 +191,52 @@ def all_categories(config: Mapping[str, Any]) -> tuple[Category, ...]:
     return CATEGORIES + tuple(
         custom_category(name, spec) for name, spec in custom.items()
     )
+
+
+@dataclass(frozen=True, slots=True)
+class DataSource:
+    """The data folder to read and the settings that go with it.
+
+    Attributes:
+        folder: The data folder.
+        config: The settings: the folder's own config.toml if it has one (as
+            ``sample/`` does), else the repo's.
+        is_sample: Whether this is the sample data, used because ``data_dir`` is
+            missing.
+    """
+
+    folder: Path
+    config: dict[str, Any]
+    is_sample: bool = False
+
+
+def find_data(config_path: Path, folder: Path | None = None) -> DataSource:
+    """Pick the data folder and its settings.
+
+    The folder is the one given, else ``data_dir`` from config.toml, else
+    ``sample/`` next to config.toml. A config.toml inside the folder wins over the
+    repo's, so the sample keeps its own time zone whatever the user's is.
+
+    Args:
+        config_path: Path to the repo's config.toml.
+        folder: A folder given on the command line, or None.
+
+    Returns:
+        The folder and its settings.
+
+    Raises:
+        FileNotFoundError: If the folder, or a config file it needs, doesn't exist.
+        tomllib.TOMLDecodeError: If a config file isn't valid TOML.
+    """
+    chosen = folder
+    if chosen is None:
+        repo_config = load_config(config_path)
+        chosen = config_path.parent / repo_config.get("data_dir", "data")
+    is_sample = folder is None and not chosen.is_dir()
+    if is_sample:
+        chosen = config_path.parent / "sample"
+    if not chosen.is_dir():
+        raise FileNotFoundError(f"{chosen} is not a folder")
+    own_config = chosen / "config.toml"
+    config_file = own_config if own_config.is_file() else config_path
+    return DataSource(chosen, load_config(config_file), is_sample)
