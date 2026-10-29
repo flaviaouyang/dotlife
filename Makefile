@@ -1,13 +1,15 @@
 .DEFAULT_GOAL := help
 MD_PATHS := -r --respect-gitignore -e ./.venv .
 
-.PHONY: help install format check test validate docs release
+.PHONY: help install format check test validate dashboard docs release
 
 help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
 
-install: ## Install dependencies, including dev tools
+install: ## Install dependencies and link the Streamlit agent skill
 	uv sync
+	@skill=$$(uv run python -c "import pathlib, streamlit; print(pathlib.Path(streamlit.__file__).parent / '.agents/skills/developing-with-streamlit')") && \
+	mkdir -p .agents/skills && ln -sfn "$$skill" .agents/skills/developing-with-streamlit
 
 format: ## Lint and format Python and Markdown
 	uv run ruff format .
@@ -26,6 +28,9 @@ test: ## Run the tests
 
 validate: ## Check the data files (data_dir in config.toml, else sample/)
 	uv run dotlife validate
+
+dashboard: ## Open the dashboard (data_dir in config.toml, else sample/)
+	uv run dotlife dashboard
 
 docs: ## Regenerate the category tables in FORMAT.md
 	uv run python -m dotlife.format_doc

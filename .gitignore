@@ -14,3 +14,6 @@ wheels/
 
 # Local planning notes (not published)
 dev/
+
+# Streamlit agent skill: a link into the installed package, made by make install
+.agents/skills/developing-with-streamlit

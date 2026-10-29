@@ -17,6 +17,7 @@ from dotlife.schema import (
     Metric,
 )
 
+CONFIG_ENV, DATA_ENV = "DOTLIFE_CONFIG", "DOTLIFE_DATA"  # set by `dotlife dashboard`
 CUSTOM_NAME = re.compile(r"[a-z][a-z0-9_]*")
 BUILT_IN_NAMES = frozenset(category.name for category in CATEGORIES)
 

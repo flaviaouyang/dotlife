@@ -1,0 +1,76 @@
+# Dashboard theme, shadcn/ui-inspired, light and dark. It matches the design mockup:
+# neutral zinc greys, Inter, thin borders, blue for better and orange for worse.
+
+[browser]
+gatherUsageStats = false     # the dashboard shows personal data; send Streamlit nothing
+
+[server]
+address = "localhost"         # only this computer can open the dashboard, not the network
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "10px"
+buttonRadius = "8px"
+font = "'Inter':https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+codeFontSize = "0.8125rem"
+baseFontSize = 14
+baseFontWeight = 400
+headingFontSizes = ["28px", "20px", "16px", "14px", "14px", "12px"]
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+linkUnderline = false
+
+[theme.light]
+primaryColor = "#18181B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F4F5"
+codeBackgroundColor = "#F4F4F5"
+textColor = "#09090B"
+linkColor = "#18181B"
+borderColor = "#E4E4E7"
+codeTextColor = "#18181B"
+grayColor = "#71717A"
+blueColor = "#2563EB"
+greenColor = "#15803D"
+redColor = "#DC2626"
+yellowColor = "#CA8A04"
+orangeColor = "#EA580C"
+violetColor = "#7C3AED"
+chartCategoricalColors = ["#2563EB", "#7C3AED", "#059669", "#D97706", "#A1A1AA", "#DB2777", "#0891B2"]
+dataframeBorderColor = "#E4E4E7"
+dataframeHeaderBackgroundColor = "#FAFAFA"
+
+[theme.dark]
+primaryColor = "#FAFAFA"
+backgroundColor = "#09090B"
+secondaryBackgroundColor = "#18181B"
+codeBackgroundColor = "#27272A"
+textColor = "#FAFAFA"
+linkColor = "#E4E4E7"
+borderColor = "#27272A"
+codeTextColor = "#E4E4E7"
+grayColor = "#A1A1AA"
+blueColor = "#60A5FA"
+greenColor = "#4ADE80"
+redColor = "#F87171"
+yellowColor = "#FACC15"
+orangeColor = "#FB923C"
+violetColor = "#A78BFA"
+chartCategoricalColors = ["#60A5FA", "#A78BFA", "#34D399", "#FBBF24", "#71717A", "#F472B6", "#22D3EE"]
+dataframeBorderColor = "#27272A"
+dataframeHeaderBackgroundColor = "#18181B"
+dataframeHeaderTextColor = "#FAFAFA"
+
+[theme.light.sidebar]
+backgroundColor = "#FAFAFA"
+secondaryBackgroundColor = "#F4F4F5"
+borderColor = "#E4E4E7"
+
+[theme.dark.sidebar]
+backgroundColor = "#09090B"
+secondaryBackgroundColor = "#18181B"
+borderColor = "#27272A"

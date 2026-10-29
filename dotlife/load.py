@@ -30,12 +30,21 @@ class Dataset:
     journal: tuple[Entry, ...]
 
     @property
-    def as_of(self) -> date | None:
-        """The latest date anywhere in the data, or None for an empty folder."""
-        days = [
+    def days(self) -> list[date]:
+        """Every date in the data, rows and journal entries alike, unsorted."""
+        return [
             cast(date, row["date"]) for rows in self.rows.values() for row in rows
         ] + [entry.day for entry in self.journal]
-        return max(days, default=None)
+
+    @property
+    def first_day(self) -> date | None:
+        """The earliest date anywhere in the data, or None for an empty folder."""
+        return min(self.days, default=None)
+
+    @property
+    def as_of(self) -> date | None:
+        """The latest date anywhere in the data, or None for an empty folder."""
+        return max(self.days, default=None)
 
 
 def read_rows(category: Category, path: Path) -> list[Row]:
