@@ -20,6 +20,11 @@
 > [!NOTE]
 > **Early work in progress.** dotlife is in alpha, and most of what's described here isn't built yet. [CHANGELOG.md](CHANGELOG.md) lists what's done so far.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/overview-dark.png">
+  <img src="docs/screenshots/overview-light.png" alt="The dotlife Overview showing a week of sample data: notable changes, then cards for steps, active time, workouts and sleep, each with its usual range, goal and recent weeks.">
+</picture>
+
 ## The idea
 
 Health apps, wearables, calendars, journals and banks each keep your data in their own place. dotlife defines **one simple file format** for all of it: CSV and Markdown files in your own repo. Everything else is built on that format.
