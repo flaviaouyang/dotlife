@@ -1,13 +1,22 @@
 import tomllib
 from functools import partial
+from pathlib import Path
 
 import streamlit as st
 
 from dotlife.dashboard.data import dataset, keep_period, period_label, period_starts
 from dotlife.periods import Period
 
+ASSETS = Path(__file__).resolve().parent / "assets"
+
 st.set_page_config(
-    page_title="dotlife", page_icon=":material/donut_small:", layout="wide"
+    page_title="dotlife", page_icon=str(ASSETS / "favicon.png"), layout="wide"
+)
+theme = "dark" if st.context.theme.type == "dark" else "light"
+st.logo(
+    str(ASSETS / f"wordmark-{theme}.svg"),
+    icon_image=str(ASSETS / f"mark-{theme}.svg"),
+    size="large",
 )
 
 try:
