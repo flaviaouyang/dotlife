@@ -54,7 +54,7 @@ events = [
 
 st.caption(
     f"{chosen.period.value.title()}ly values up to {period_title(chosen).lower()}. "
-    "The band is your usual range; dashed lines are life events."
+    "The band is your usual range. Dashed lines are life events: hover for details."
 )
 
 for spec in trend_specs(category):

@@ -83,17 +83,21 @@ def trend_chart(
         marks = pl.DataFrame(
             {"day": [day for day, _ in events], "label": [label for _, label in events]}
         )
+        tooltip = [
+            alt.Tooltip("label:N", title="Life event"),
+            alt.Tooltip("day:T", title="Date", format="%-d %b %Y"),
+        ]
         rule = (
             alt.Chart(marks)
             .mark_rule(strokeDash=[3, 3], color="gray")
-            .encode(x="day:T")
+            .encode(x="day:T", tooltip=tooltip)
         )
-        text = (
+        hover_area = (
             alt.Chart(marks)
-            .mark_text(align="left", dx=4, dy=-4, baseline="bottom", color="gray")
-            .encode(x="day:T", y=alt.value(12), text="label:N")
+            .mark_rule(strokeWidth=12, opacity=0)
+            .encode(x="day:T", tooltip=tooltip)
         )
-        layers += [rule, text]
+        layers += [rule, hover_area]
     return alt.LayerChart(layer=[*layers, line]).properties(height=260)
 
 
