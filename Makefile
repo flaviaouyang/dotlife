@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 MD_PATHS := -r --respect-gitignore -e ./.venv .
 
-.PHONY: help install format check test validate dashboard docs release
+.PHONY: help install fresh format check test validate dashboard docs release
 
 help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -25,6 +25,9 @@ check: ## Lint and check formatting and types without changing files (what CI ru
 
 test: ## Run the tests
 	uv run python -m unittest discover -s tests
+
+fresh: ## Fetch new data with your source scripts, then validate
+	uv run dotlife fresh
 
 validate: ## Check the data files (data_dir in config.toml, else sample/)
 	uv run dotlife validate

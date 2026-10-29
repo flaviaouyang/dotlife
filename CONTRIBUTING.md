@@ -22,6 +22,7 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `load.py`: reads a data folder once into a `Dataset` (rows by category, settings, reflections).
   - `summaries.py`: the calculations the dashboard shows: daily and period values, clock times, the usual range, assessments, notable metrics, the stuck flag and display units. Standard library only, so other tools (like a future weekly-review skill) can reuse them.
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
+  - `fresh.py`: `dotlife fresh`, which runs the person's source scripts listed in `config.toml`, then validates.
   - `cli.py` and `__main__.py`: the `dotlife` command.
   - `sources/`: the importers.
   - `dashboard/`: the Streamlit app (`make dashboard`). Use the `developing-with-streamlit` skill when changing it, and keep logic out of the page scripts:

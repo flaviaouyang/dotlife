@@ -17,3 +17,6 @@ dev/
 
 # Streamlit agent skill: a link into the installed package, made by make install
 .agents/skills/developing-with-streamlit
+
+# Log of the last make fresh
+.dotlife/

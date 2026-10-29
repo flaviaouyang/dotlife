@@ -10,8 +10,10 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 - `config.toml`: the person's settings: time zone, which categories are switched on, thresholds, budgets and custom metrics. Change it only when they ask, and say what changed.
 - `sources.md`: their setup in plain words: which source provides each category, the priority when two sources overlap, the choices the guides leave to them, and how each source is fetched. `setup` writes it and `maintain` keeps it current. Read it before changing anything.
 - `data/`: their data files, in the format. `sync` writes them.
-- `scripts/`: their own import scripts, written by `setup-sources` for sources that can be scripted.
-- `sample/`: made-up demo data (Alice, of Alice and Bob). The dashboard falls back to it when `data/` doesn't exist. Never write the person's data here. `setup-sources` deletes it at the end of setup.
+- `scripts/`: their own import scripts, written by `setup` and run by `make fresh`.
+- `prompts/`: instructions for steps only an agent can do, one file per step, e.g. `prompts/mood.md` for inferring mood from reflections.
+- `inferred/`: what the agent answered for each inferred metric, with a few words of evidence per day. Scripts map it into `data/`.
+- `sample/`: made-up demo data (Alice, of Alice and Bob). The dashboard falls back to it when `data/` doesn't exist. Never write the person's data here. `setup` deletes it at the end.
 - `docs/sources/`: one guide per data source: how to get the data out and how it maps to the format.
 - `dotlife/`: dotlife's own code. Leave it alone during setup and sync (see the last section).
 
@@ -24,6 +26,20 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 - `maintain` (in `.agents/skills/`): for when `make fresh` fails, or to add a source, change a device or change how something works. It updates the scripts, `config.toml` and `sources.md` together.
 - `uv run dotlife validate`: check the files. Fix what it reports at the source or in the import, never by editing values to pass.
 - `uv run dotlife dashboard`: open the dashboard.
+
+## Writing a source script
+
+`make fresh` runs `dotlife fresh`, which runs each script listed under `[[fresh.steps]]` in `config.toml`, in order, then the validator. A script must:
+
+- Be listed with a `name` and either `script = "scripts/<name>.py"` (run with dotlife's Python; standard library only) or `command = [...]` for anything else, e.g. a Swift script for Apple Calendar.
+- Read the data folder from `DOTLIFE_DATA` and the settings from `DOTLIFE_CONFIG`. It runs in the folder holding `config.toml`.
+- Write only its own categories' files in the data folder, following `FORMAT.md` and the source's guide in `docs/sources/`. Running it twice must give the same files: re-fetch a recent window and replace those rows rather than appending.
+- Keep secrets (tokens, passwords) out of the repo: read them from the environment or the system keychain, and say where in `sources.md`.
+- Print a line or two about what it did, and exit 0 when it finished. On failure, print what went wrong in plain words and exit with any other code. A source that needs a manual step, like a new Apple Health export, finishes with a note when there's nothing new.
+
+A step only an AI agent can do (a source reachable only through a connector, or AI inference) is listed with `agent = "prompts/<name>.md"`, the instructions the agent follows. `make fresh` lists it as left for your agent and doesn't run it; the `fetch` skill does it, then runs `make fresh`. The agent saves what it fetched or inferred as a file, exactly as it got it, and a script step maps that file into the data files: the agent never edits data files itself.
+
+`dotlife fresh --only <name>` runs one step. The last run's output is in `.dotlife/fresh.log`.
 
 ## Data rules
 

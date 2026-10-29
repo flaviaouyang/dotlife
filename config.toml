@@ -49,6 +49,22 @@ home_currency = "EUR"             # ISO 4217; other currencies are flagged, not 
 # Monthly budget per category, in home_currency:
 # budgets = { groceries = 400, eating_out = 150, transport = 80 }
 
+# Source scripts `make fresh` runs, in order, from this folder. Each gets
+# DOTLIFE_CONFIG and DOTLIFE_DATA; exit code 0 means it finished. A script is a
+# .py file run with dotlife's Python; a command is anything else; an agent step
+# names the instructions your AI agent follows (its fetch skill runs those).
+# [[fresh.steps]]
+# name = "oura"
+# script = "scripts/oura.py"
+#
+# [[fresh.steps]]
+# name = "calendar"
+# command = ["swift", "scripts/calendar.swift"]
+#
+# [[fresh.steps]]
+# name = "mood-from-reflections"
+# agent = "prompts/mood.md"
+
 # Custom metrics: one table per metric, with its data in <name>.csv
 # (columns date, source, value). See FORMAT.md.
 # [custom.guitar]

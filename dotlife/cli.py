@@ -6,7 +6,8 @@ import tomllib
 from collections.abc import Sequence
 from pathlib import Path
 
-from dotlife.config import CONFIG_ENV, DATA_ENV, find_data
+from dotlife.config import CONFIG_ENV, DATA_ENV, find_data, load_config
+from dotlife.fresh import fresh_steps, run_fresh
 from dotlife.validate import format_json, format_text, validate_folder
 
 EXIT_OK, EXIT_ERRORS, EXIT_USAGE = 0, 1, 2
@@ -78,6 +79,36 @@ def run_dashboard(args: argparse.Namespace) -> int:
     return subprocess.run(command, cwd=config.parent, env=env, check=False).returncode
 
 
+def run_fresh_command(args: argparse.Namespace) -> int:
+    """Run the source scripts listed in config.toml, then validate.
+
+    Args:
+        args: Parsed arguments: ``config`` and ``only``.
+
+    Returns:
+        0 when every step finished and the data is valid, 1 when not, 2 when
+        config.toml can't be read, lists no steps, or ``--only`` names none.
+    """
+    try:
+        config = load_config(args.config)
+        steps = fresh_steps(config)
+    except (FileNotFoundError, tomllib.TOMLDecodeError, ValueError) as error:
+        print(f"dotlife: {error}", file=sys.stderr)
+        return EXIT_USAGE
+    if args.only is not None:
+        steps = [step for step in steps if step.name == args.only]
+    if not steps:
+        print(
+            f"dotlife: no step named {args.only!r} in [[fresh.steps]]"
+            if args.only is not None
+            else "dotlife: no [[fresh.steps]] in config.toml yet. Run dotlife setup, "
+            "then let your agent's setup skill write the scripts.",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+    return run_fresh(args.config, config, steps)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the ``dotlife`` command's argument parser.
 
@@ -105,6 +136,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_source_arguments(dashboard, "folder to show")
     dashboard.set_defaults(handler=run_dashboard)
+    fresh = commands.add_parser(
+        "fresh",
+        help="fetch new data with your source scripts, then validate",
+        description="Run the scripts listed under [[fresh.steps]] in config.toml, "
+        "in order, then validate. Output is also saved to .dotlife/fresh.log.",
+    )
+    fresh.add_argument(
+        "--config",
+        type=Path,
+        default=Path("config.toml"),
+        help="path to config.toml (default: ./config.toml)",
+    )
+    fresh.add_argument("--only", metavar="NAME", help="run only the step NAME")
+    fresh.set_defaults(handler=run_fresh_command)
     return parser
 
 
