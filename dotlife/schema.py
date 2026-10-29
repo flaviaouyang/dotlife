@@ -6,6 +6,8 @@ from enum import StrEnum
 from typing import Any
 from zoneinfo import ZoneInfo
 
+FORMAT_VERSION = 1
+
 Value = date | datetime | float | str | None
 Row = dict[str, Value]
 
@@ -129,7 +131,9 @@ class Category:
         key: Columns whose values must be unique across rows; empty when rows
             can repeat (e.g. two identical purchases on one day).
         sensitive: Whether the dashboard hides it until "Show sensitive" is on.
-        checks: Extra row checks; each returns a problem description or None.
+        expect_every_day: Whether a day without a row is a gap worth reporting.
+        checks: Extra row checks; each returns an error description or None.
+        warnings: Like ``checks``, but what they find is a warning, not an error.
         day_filter: Decides which days count toward averages, e.g. leaving out
             watch-off days.
     """
@@ -142,7 +146,9 @@ class Category:
     metrics: tuple[Metric, ...]
     key: tuple[str, ...] = ("date",)
     sensitive: bool = False
+    expect_every_day: bool = False
     checks: tuple[Check, ...] = ()
+    warnings: tuple[Check, ...] = ()
     day_filter: DayFilter | None = None
 
     @property

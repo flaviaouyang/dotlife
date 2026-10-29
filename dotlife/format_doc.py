@@ -115,9 +115,10 @@ def summary_line(function: Callable) -> str:
         function: A check or day filter.
 
     Returns:
-        The rule in one sentence.
+        The rule in one sentence, with reStructuredText code marks made Markdown.
     """
-    return (inspect.getdoc(function) or function.__name__).splitlines()[0]
+    first_line = (inspect.getdoc(function) or function.__name__).splitlines()[0]
+    return first_line.replace("``", "`")
 
 
 def category_section(category: Category) -> str:
@@ -132,6 +133,8 @@ def category_section(category: Category) -> str:
     facts = [f"`{category.file}`", GRAINS[category.grain]]
     if category.key:
         facts.append(f"unique: {', '.join(f'`{name}`' for name in category.key)}")
+    if category.expect_every_day:
+        facts.append("expected every day (gaps are reported)")
     if category.sensitive:
         facts.append("sensitive")
     lines = [
@@ -151,7 +154,9 @@ def category_section(category: Category) -> str:
         for metric in category.metrics
         if metric.related
     ]
-    rules = [summary_line(check) for check in category.checks] + related
+    rules = [
+        summary_line(check) for check in (*category.checks, *category.warnings)
+    ] + related
     if category.day_filter is not None:
         rules.append(summary_line(category.day_filter))
     if rules:

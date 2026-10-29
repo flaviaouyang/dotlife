@@ -70,6 +70,22 @@ def date_is_start_date(row: Row, context: Context) -> str | None:
     return f"date {row['date']} should be the start date {start_date}"
 
 
+def currency_is_home(row: Row, context: Context) -> str | None:
+    """Amounts in a currency other than ``home_currency`` are flagged, not converted.
+
+    Args:
+        row: A parsed transaction row with ``currency``.
+        context: Supplies ``home_currency``; without it nothing is flagged.
+
+    Returns:
+        A warning, or None when the row is in the home currency.
+    """
+    home = context.options.get("home_currency")
+    if home is None or row["currency"] == home:
+        return None
+    return f"currency {row['currency']} is not the home currency {home}"
+
+
 def watch_worn(row: Row, context: Context) -> bool:
     """Days the watch wasn't worn (few steps, little sedentary time) skip averages.
 

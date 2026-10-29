@@ -82,7 +82,7 @@ The tables below are generated from `dotlife/categories.py`. *Summary* is how a 
 
 ### Activity
 
-Config section `[activity]`. `activity.csv`, one row per day, unique: `date`.
+Config section `[activity]`. `activity.csv`, one row per day, unique: `date`, expected every day (gaps are reported).
 
 | Column | Type | Unit | Required | Limits | Plausible | Summary | Better |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -117,7 +117,7 @@ Config section `[workouts]`. `workouts.csv`, one row per session, unique: `start
 
 ### Sleep
 
-Config section `[sleep]`. `sleep.csv`, one row per session, unique: `start`.
+Config section `[sleep]`. `sleep.csv`, one row per session, unique: `start`, expected every day (gaps are reported).
 
 | Column | Type | Unit | Required | Limits | Plausible | Summary | Better |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -136,7 +136,7 @@ Config section `[sleep]`. `sleep.csv`, one row per session, unique: `start`.
 
 ### Heart
 
-Config section `[heart]`. `heart.csv`, one row per day, unique: `date`.
+Config section `[heart]`. `heart.csv`, one row per day, unique: `date`, expected every day (gaps are reported).
 
 | Column | Type | Unit | Required | Limits | Plausible | Summary | Better |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -287,7 +287,7 @@ Config section `[time]`. `time.csv`, one row per day, unique: `date`, `category`
 
 ### Screen time
 
-Config section `[screen_time]`. `screen_time.csv`, one row per day, unique: `date`.
+Config section `[screen_time]`. `screen_time.csv`, one row per day, unique: `date`, expected every day (gaps are reported).
 
 | Column | Type | Unit | Required | Limits | Plausible | Summary | Better |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -367,6 +367,8 @@ Config section `[finances]`. `finances.csv`, one row per transaction, sensitive.
 | `source` | text | | yes | | | | |
 | `amount` | number |  | no |  |  | total |  |
 
+- Amounts in a currency other than `home_currency` are flagged, not converted.
+
 ### Life events
 
 Config section `[events]`. `events.csv`, one row per event.
@@ -378,7 +380,7 @@ Config section `[events]`. `events.csv`, one row per event.
 
 ### Weather
 
-Config section `[weather]`. `weather.csv`, one row per day, unique: `date`.
+Config section `[weather]`. `weather.csv`, one row per day, unique: `date`, expected every day (gaps are reported).
 
 | Column | Type | Unit | Required | Limits | Plausible | Summary | Better |
 | --- | --- | --- | --- | --- | --- | --- | --- |

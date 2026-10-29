@@ -1,4 +1,5 @@
 from dotlife.rules import (
+    currency_is_home,
     date_is_start_date,
     date_is_wake_date,
     end_after_start,
@@ -151,6 +152,7 @@ def daily(
     metrics: tuple[Metric, ...],
     item: Field | None = None,
     sensitive: bool = False,
+    expect_every_day: bool = False,
 ) -> Category:
     """Build a category with one row per day, or per day and item.
 
@@ -160,6 +162,7 @@ def daily(
         metrics: Its numeric columns.
         item: A text column that, with the date, identifies a row (e.g. a habit).
         sensitive: Whether it is hidden until "Show sensitive" is on.
+        expect_every_day: Whether a day without a row is a gap worth reporting.
 
     Returns:
         The category, stored in ``<name>.csv``.
@@ -174,6 +177,7 @@ def daily(
         metrics=metrics,
         key=("date", *(field.name for field in items)),
         sensitive=sensitive,
+        expect_every_day=expect_every_day,
     )
 
 
@@ -193,6 +197,7 @@ ACTIVITY = Category(
         measured("distance_m", "Distance", "m", (0, 100_000), SUM, True),
         measured("floors", "Floors", "floors", (0, 500), MEAN, True),
     ),
+    expect_every_day=True,
     day_filter=watch_worn,
 )
 
@@ -228,6 +233,7 @@ SLEEP = Category(
         )
     ),
     key=("start",),
+    expect_every_day=True,
     checks=(end_after_start, date_is_wake_date),
 )
 
@@ -238,6 +244,7 @@ HEART = daily(
         measured("resting_hr_bpm", "Resting heart rate", "bpm", (30, 120), MEAN, False),
         measured("hrv_ms", "Heart rate variability", "ms", (5, 250), MEAN, True),
     ),
+    expect_every_day=True,
 )
 
 BODY = daily(
@@ -363,6 +370,7 @@ SCREEN_TIME = daily(
         bounded("screen_min", "Screen time", "min", (0, MINUTES_PER_DAY), MEAN, False),
         measured("pickups", "Pickups", "pickups", (0, 1_000), MEAN, False),
     ),
+    expect_every_day=True,
 )
 
 TASKS = daily(
@@ -424,6 +432,7 @@ FINANCES = Category(
     metrics=(Metric("amount", "Amount", "", SUM),),
     key=(),
     sensitive=True,
+    warnings=(currency_is_home,),
 )
 
 EVENTS = Category(
@@ -444,6 +453,7 @@ WEATHER = daily(
         hours("daylight_h", "Daylight"),
         measured("precipitation_mm", "Precipitation", "mm", (0, 500), SUM),
     ),
+    expect_every_day=True,
 )
 
 SOCIAL = daily(
