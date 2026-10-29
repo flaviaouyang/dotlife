@@ -1,0 +1,56 @@
+name: Release
+
+# After CI passes on a push to main: if no GitHub release exists yet for the version
+# in pyproject.toml, tag the commit CI tested and publish the release. The notes are
+# that version's section of the changelog. Pre-release versions (0.1.0a1) are tagged
+# in the SemVer form git-cliff reads (v0.1.0-alpha.1) and marked as pre-releases.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Find the tag and whether it is already released
+        id: version
+        run: |
+          tag="v$(uv version --short | sed -E 's/a([0-9]+)$/-alpha.\1/; s/b([0-9]+)$/-beta.\1/; s/rc([0-9]+)$/-rc.\1/')"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $tag already exists; nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Write the release notes
+        if: steps.version.outputs.exists == 'false'
+        run: >
+          uv run git-cliff --unreleased --tag "${{ steps.version.outputs.tag }}"
+          --strip header --output notes.md
+      - name: Create the release, tagging the commit CI tested
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          tag="${{ steps.version.outputs.tag }}"
+          prerelease=$([[ "$tag" == *-* ]] && echo --prerelease || true)
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+            --title "$tag" --notes-file notes.md $prerelease

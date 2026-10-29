@@ -28,5 +28,5 @@ release: ## Bump the version and update CHANGELOG.md (override: BUMP=major|minor
 	@version=$(or $(VERSION),$$(uv run git-cliff --bumped-version $(if $(BUMP),--bump $(BUMP)))) && \
 	uv version --no-sync "$${version#v}" && \
 	uv run git-cliff --tag "$$version" && \
-	echo "Review the changes, then commit and tag:" && \
-	echo "  git add CHANGELOG.md pyproject.toml uv.lock && git commit -m 'chore(release): $$version' && git tag $$version"
+	echo "Review the changes, then commit and push. Once CI passes, GitHub Actions tags $$version and publishes the release:" && \
+	echo "  git add CHANGELOG.md pyproject.toml uv.lock && git commit -m 'chore(release): $$version' && git push"
