@@ -5,6 +5,9 @@ description = "A small life dashboard built on a plain-file data format you own.
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "altair>=6.3.0",
+    "polars>=2.1.0",
+    "streamlit>=1.66.1",
     "tzdata>=2026.6 ; sys_platform == 'win32'",
 ]
 
