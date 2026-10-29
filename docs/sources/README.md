@@ -13,6 +13,7 @@ One guide per data source: how to get the data out and how it maps to [the forma
 | [Apple Calendar](apple-calendar.md) | time use; optionally events, social, travel | EventKit script on a Mac |
 | [Google Calendar](google-calendar.md) | time use; optionally events, social, travel | Google Calendar API v3 |
 | [Outlook calendar](outlook-calendar.md) | time use; optionally events, social, travel | Microsoft Graph `calendarView` |
+| [Weather](weather.md) | weather | Open-Meteo's historical API; no account |
 | [Inference](inference.md) | any metric your other data answers, e.g. dining out from finances, mood from reflections | A script for rules; your agent's `fetch` skill for text |
 
 Each guide was checked against the source's own documentation on the date at its end. Products change: if a step no longer works, check the linked pages and update the guide.
