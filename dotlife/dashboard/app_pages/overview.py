@@ -1,17 +1,18 @@
 import streamlit as st
 
-from dotlife.dashboard.cards import build_overview, usual_periods
-from dotlife.dashboard.data import dataset, period_title, pinned_keys, selection
+from dotlife.dashboard.cards import build_overview, card_labels, usual_periods
+from dotlife.dashboard.data import dataset, layout, period_title, selection
 from dotlife.dashboard.display import AREAS
-from dotlife.dashboard.widgets import show_grid
+from dotlife.dashboard.widgets import CARD_STYLE, show_grid, show_hidden
 
 data = dataset()
 chosen = selection()
-overview = build_overview(data, chosen)
+arrangement = layout()
+overview = build_overview(data, chosen, arrangement)
+labels = {category.name: category.label for category in data.categories}
 period = chosen.period.value
 count = usual_periods(data.source.config, chosen.period)
-pins = pinned_keys()
-by_key = {card.key: card for card in overview.cards}
+st.html(CARD_STYLE)
 
 st.title(period_title(chosen))
 st.caption(
@@ -28,16 +29,19 @@ if overview.notable:
                 f"{card.unit}. {card.usual}."
             )
 
-pinned_cards = [by_key[key] for key in pins if key in by_key]
+pinned_cards = sorted(
+    (card for card in overview.cards if arrangement.pin_rank(card.key) is not None),
+    key=lambda card: arrangement.pin_rank(card.key) or 0,
+)
 if pinned_cards:
     st.subheader("Pinned")
-    show_grid(pinned_cards, chosen, "pinned", set(pins))
+    show_grid(pinned_cards, chosen, "pinned", arrangement, labels)
 
 for area in AREAS:
     cards = [card for card in overview.cards if card.area == area]
     if cards:
         st.subheader(area)
-        show_grid(cards, chosen, area, set(pins))
+        show_grid(cards, chosen, area, arrangement, labels)
 
 if overview.missing:
     st.caption(f"No data this {period}: {', '.join(overview.missing)}.")
@@ -47,4 +51,8 @@ if overview.hidden:
         "**Show sensitive** in the sidebar to see them."
     )
 if not pinned_cards:
-    st.caption("Pin a card to keep it at the top. Pins are saved in your config.toml.")
+    st.caption(
+        "Use a card's menu to pin it to the top or hide it. Your choices are saved "
+        "in config.toml."
+    )
+show_hidden(arrangement, labels, card_labels(data))

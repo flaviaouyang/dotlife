@@ -7,7 +7,7 @@ import streamlit as st
 import tomlkit
 
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data
-from dotlife.dashboard.cards import Selection
+from dotlife.dashboard.cards import Layout, Selection
 from dotlife.load import Dataset, load_dataset
 from dotlife.periods import Period, period_end, period_start
 from dotlife.validate import Report, validate_folder
@@ -178,42 +178,44 @@ def config_path() -> Path:
     return Path(os.environ.get(CONFIG_ENV, "config.toml"))
 
 
-def pinned_keys() -> list[str]:
-    """Read the pinned cards from the repo's config.toml.
+def layout() -> Layout:
+    """Read the pinned and hidden cards from the repo's config.toml.
 
-    Pins always live in the repo's own config, even while the sample is shown, so
-    pinning never edits the sample.
+    They always live in the repo's own config, even while the sample is shown,
+    so pinning or hiding never edits the sample.
 
     Returns:
-        Card keys such as ``activity.steps``, in the order they were pinned.
+        The layout; empty when config.toml can't be read.
     """
     try:
         with config_path().open("rb") as file:
-            config = tomllib.load(file)
+            dashboard = tomllib.load(file).get("dashboard", {})
     except (FileNotFoundError, tomllib.TOMLDecodeError):
-        return []
-    return list(config.get("dashboard", {}).get("pinned", []))
+        return Layout()
+    return Layout(
+        tuple(dashboard.get("pinned", [])), tuple(dashboard.get("hidden", []))
+    )
 
 
-def set_pinned(key: str, pinned: bool) -> None:
-    """Pin or unpin a card by rewriting ``[dashboard] pinned`` in config.toml.
+def set_listed(name: str, key: str, listed: bool) -> None:
+    """Add a card or category to, or remove it from, ``pinned`` or ``hidden``.
 
-    The rest of the file, comments included, is kept as it is.
+    The rest of config.toml, comments included, is kept as it is.
 
     Args:
-        key: The card's key, e.g. ``activity.steps``.
-        pinned: True to pin it, False to unpin it.
+        name: ``pinned`` or ``hidden``.
+        key: A card key such as ``activity.steps``, or a category name.
+        listed: True to add it, False to remove it.
     """
     path = config_path()
     with path.open(encoding="utf-8") as file:
         document = tomlkit.parse(file.read())
     dashboard = document.setdefault("dashboard", tomlkit.table())
-    keys = [str(item) for item in dashboard.get("pinned", [])]
-    keys = (
-        [*keys, key]
-        if pinned and key not in keys
-        else [k for k in keys if pinned or k != key]
-    )
-    dashboard["pinned"] = keys
+    keys = [str(item) for item in dashboard.get(name, [])]
+    if listed and key not in keys:
+        keys.append(key)
+    if not listed:
+        keys = [entry for entry in keys if entry != key]
+    dashboard[name] = keys
     with path.open("w", encoding="utf-8") as file:
         file.write(tomlkit.dumps(document))

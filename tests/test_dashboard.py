@@ -4,9 +4,11 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from typing import cast
 
 import tomlkit
 from streamlit.testing.v1 import AppTest
+from streamlit.testing.v1.element_tree import MenuButton
 
 from dotlife.config import CONFIG_ENV, DATA_ENV
 from dotlife.periods import Period
@@ -86,19 +88,47 @@ class DashboardSmokeTest(unittest.TestCase):
             labels = [metric.label for metric in app.metric]
             self.assertEqual(labels, ["Steps", "Active time", "Time asleep", "Bedtime"])
 
-    def test_pin_and_unpin(self):
-        """Pinning adds a Pinned section and saves it; comments in config survive."""
+    def menu(self, app: AppTest, key: str) -> MenuButton:
+        """Find a card's menu by its widget key.
+
+        Args:
+            app: The running app.
+            key: The menu's key, e.g. ``menu-Body and health-activity.steps``.
+
+        Returns:
+            The menu button.
+        """
+        menus = (cast(MenuButton, menu) for menu in app.get("menu_button"))
+        return next(menu for menu in menus if menu.key == key)
+
+    def test_pin_hide_and_show_again(self):
+        """The card menu pins and hides; the Hidden list brings things back."""
         config = Path(os.environ[CONFIG_ENV])
         app = AppTest.from_file(str(APP), default_timeout=30).run()
-        self.assertNotIn("Pinned", [header.value for header in app.subheader])
-        app.button(key="pin-Body and health-activity.steps").click().run()
+
+        self.menu(app, "menu-Body and health-activity.steps").click(
+            "Pin card to the top"
+        ).run()
         self.assertIn("Pinned", [header.value for header in app.subheader])
-        saved = config.read_text(encoding="utf-8")
-        self.assertIn('pinned = ["activity.steps"]', saved)
-        self.assertIn("# cards shown first on the Overview", saved)
-        app.button(key="pin-pinned-activity.steps").click().run()
+        self.assertIn('pinned = ["activity.steps"]', config.read_text(encoding="utf-8"))
+        self.menu(app, "menu-pinned-activity.steps").click("Unpin card").run()
         self.assertNotIn("Pinned", [header.value for header in app.subheader])
-        self.assertIn("pinned = []", config.read_text(encoding="utf-8"))
+
+        self.menu(app, "menu-Body and health-activity.steps").click(
+            "Hide all of Activity"
+        ).run()
+        self.assertNotIn("Steps", [metric.label for metric in app.metric])
+        saved = config.read_text(encoding="utf-8")
+        self.assertIn('hidden = ["activity"]', saved)
+        self.assertIn("# cards or categories left out", saved)
+        app.switch_page("app_pages/trends.py").run()
+        self.assertNotIn("Activity", app.pills(key="trend_category").options)
+        self.assertIn("Sleep", app.pills(key="trend_category").options)
+
+        app.switch_page("app_pages/overview.py").run()
+        app.button(key="unhide-activity").click().run()
+        self.assertIn("Steps", [metric.label for metric in app.metric])
+        self.assertIn("hidden = []", config.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

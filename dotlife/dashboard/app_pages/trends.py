@@ -3,9 +3,15 @@ from typing import cast
 
 import streamlit as st
 
-from dotlife.dashboard.cards import display_goal, period_target, read, trend_specs
+from dotlife.dashboard.cards import (
+    display_goal,
+    period_target,
+    read,
+    spec_key,
+    trend_specs,
+)
 from dotlife.dashboard.charts import nights_chart, trend_chart
-from dotlife.dashboard.data import dataset, period_title, selection
+from dotlife.dashboard.data import dataset, layout, period_title, selection
 from dotlife.dashboard.display import format_value, hours_minutes
 from dotlife.periods import Period, period_end
 
@@ -18,13 +24,27 @@ HISTORY = {
 
 data = dataset()
 chosen = selection()
+arrangement = layout()
 categories = [
     category
     for category in data.categories
     if category.metrics
     and category.name != "events"
     and (chosen.show_sensitive or not category.sensitive)
+    and not arrangement.is_hidden(category.name)
 ]
+pin_ranks = {
+    category.name: min(
+        (
+            rank
+            for rank, entry in enumerate(arrangement.pinned)
+            if entry.split(".")[0] == category.name
+        ),
+        default=len(arrangement.pinned),
+    )
+    for category in categories
+}
+categories.sort(key=lambda category: pin_ranks[category.name])
 
 st.title("Trends")
 if not categories:
@@ -62,6 +82,8 @@ else:
     )
 
     for spec in trend_specs(category):
+        if arrangement.is_hidden(spec_key(spec)):
+            continue
         reading = read(spec, data, chosen)
         if reading is None:
             continue

@@ -94,6 +94,50 @@ class Selection:
 
 
 @dataclass(frozen=True, slots=True)
+class Layout:
+    """Which cards and categories are pinned to the top or hidden.
+
+    Entries are card keys (``activity.steps``) or category names (``sleep``),
+    which cover every card of that category.
+
+    Attributes:
+        pinned: Pinned entries, in the order they were pinned.
+        hidden: Hidden entries.
+    """
+
+    pinned: tuple[str, ...] = ()
+    hidden: tuple[str, ...] = ()
+
+    def is_hidden(self, key: str) -> bool:
+        """Tell whether a card or category is hidden.
+
+        Args:
+            key: A card key or a category name.
+
+        Returns:
+            True if it, or its category, is hidden.
+        """
+        return key in self.hidden or key.split(".")[0] in self.hidden
+
+    def pin_rank(self, key: str) -> int | None:
+        """Return where a card or category sits among the pins.
+
+        Args:
+            key: A card key or a category name.
+
+        Returns:
+            Its position among the pinned entries (its own or its category's,
+            whichever comes first), or None when it isn't pinned.
+        """
+        ranks = [
+            rank
+            for rank, entry in enumerate(self.pinned)
+            if entry in (key, key.split(".")[0])
+        ]
+        return min(ranks, default=None)
+
+
+@dataclass(frozen=True, slots=True)
 class Reading:
     """The numbers behind a card, in display units.
 
@@ -272,6 +316,35 @@ def card_specs(category: Category) -> list[CardSpec]:
             CardSpec("sleep", None, "Bedtime", Aggregate.MEAN, CLOCK, False, "start")
         )
     return specs
+
+
+def spec_key(spec: CardSpec) -> str:
+    """Return the key that names a card in pins, hides and widget keys.
+
+    Args:
+        spec: The card.
+
+    Returns:
+        ``category.column``, or ``category.start`` for bedtime and
+        ``category.count`` for counts.
+    """
+    return f"{spec.category}.{spec.column or spec.clock_of or 'count'}"
+
+
+def card_labels(dataset: Dataset) -> dict[str, str]:
+    """Name every possible Overview card, hidden ones included.
+
+    Args:
+        dataset: The loaded data.
+
+    Returns:
+        Card labels by card key.
+    """
+    return {
+        spec_key(spec): spec.label
+        for category in dataset.categories
+        for spec in card_specs(category)
+    }
 
 
 def trend_specs(category: Category) -> list[CardSpec]:
@@ -787,7 +860,7 @@ def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card |
     chip, color = chip_and_color(reading)
     usual = reading.usual
     card = Card(
-        key=f"{spec.category}.{spec.column or spec.clock_of or 'count'}",
+        key=spec_key(spec),
         area=AREA_OF.get(spec.category, AREAS[-1]),
         label=spec.label,
         value=shown(reading.current),
@@ -940,12 +1013,16 @@ def missing_note(spec: CardSpec, dataset: Dataset) -> str:
     return f"{spec.label.lower()}{when}"
 
 
-def build_overview(dataset: Dataset, selection: Selection) -> Overview:
+def build_overview(
+    dataset: Dataset, selection: Selection, layout: Layout | None = None
+) -> Overview:
     """Build the Overview for the selected period.
 
     Args:
         dataset: The loaded data.
         selection: The chosen period and options.
+        layout: Pins and hides; hidden cards and categories are left out,
+            including from "Notable".
 
     Returns:
         The cards to show, the notable ones, what has no data, and what is hidden.
@@ -955,7 +1032,14 @@ def build_overview(dataset: Dataset, selection: Selection) -> Overview:
         for category in dataset.categories
         if selection.show_sensitive or not category.sensitive
     ]
-    specs = [spec for category in shown for spec in card_specs(category)]
+    layout = Layout() if layout is None else layout
+    specs = [
+        spec
+        for category in shown
+        if not layout.is_hidden(category.name)
+        for spec in card_specs(category)
+        if not layout.is_hidden(spec_key(spec))
+    ]
     built = [(spec, build_card(spec, dataset, selection)) for spec in specs]
     cards = [card for _, card in built if card is not None]
     cards = [with_stuck_note(card, dataset, selection, cards) for card in cards]
