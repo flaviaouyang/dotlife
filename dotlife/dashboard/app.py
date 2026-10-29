@@ -8,13 +8,28 @@ from dotlife.dashboard.data import dataset, keep_period, period_label, period_st
 from dotlife.periods import Period
 
 ASSETS = Path(__file__).resolve().parent / "assets"
+CREDIT = """
+<style>
+.dotlife-credit { margin: 0; font-size: 0.8125rem; opacity: 0.7; }
+.dotlife-credit a {
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.3s ease;
+}
+.dotlife-credit a:hover,
+.dotlife-credit a:focus-visible { background-size: 100% 1px; }
+@media (prefers-reduced-motion: reduce) { .dotlife-credit a { transition: none; } }
+</style>
+<p class="dotlife-credit">Created by
+<a href="https://www.flaviaouyang.com" target="_blank" rel="noopener">
+Flavia Ouyang</a></p>
+"""
 
 st.set_page_config(
     page_title="dotlife", page_icon=str(ASSETS / "favicon.png"), layout="wide"
 )
-st.logo(
-    str(ASSETS / "logo.svg"), icon_image=str(ASSETS / "favicon.png"), size="large"
-)
+st.logo(str(ASSETS / "logo.svg"), icon_image=str(ASSETS / "favicon.png"), size="large")
 
 try:
     data = dataset()
@@ -73,6 +88,6 @@ with st.sidebar:
             "London. Add your own data folder and she disappears.",
             title="Sample data",
         )
-    st.caption("Created by [Flavia Ouyang](https://www.flaviaouyang.com)")
+    st.html(CREDIT)
 
 navigation.run()
