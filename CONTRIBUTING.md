@@ -18,15 +18,15 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `config.py`: reads `config.toml` and gives each category its settings, including overrides of plausible bounds and related metrics.
   - `format_doc.py`: generates the category tables in `FORMAT.md`.
   - `periods.py`: weeks, months and clock-time maths.
-  - `journal.py`: reads `journal/` into entries with their `#tags`.
-  - `load.py`: reads a data folder once into a `Dataset` (rows by category, settings, journal).
+  - `reflections.py`: reads the yearly `reflections/YYYY.txt` files (jrnl's plain-text format) into entries with their time, star and tags.
+  - `load.py`: reads a data folder once into a `Dataset` (rows by category, settings, reflections).
   - `summaries.py`: the calculations the dashboard shows: daily and period values, clock times, the usual range, assessments, notable metrics, the stuck flag and display units. Standard library only, so other tools (like a future weekly-review skill) can reuse them.
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
   - `cli.py` and `__main__.py`: the `dotlife` command.
   - `sources/`: the importers.
   - `dashboard/`: the Streamlit app (`make dashboard`). Use the `developing-with-streamlit` skill when changing it, and keep logic out of the page scripts:
     - `app.py`: entry point, sidebar (period, period picker, "Show sensitive", sample notice) and `st.navigation`.
-    - `app_pages/`: Overview, Trends, Journal, Data health. Plain scripts that only lay things out.
+    - `app_pages/`: Overview, Trends, Reflections, Data health. Plain scripts that only lay things out.
     - `data.py`: cached loading and validation, reloaded when a data file changes, and the sidebar selection.
     - `cards.py`: what each card shows (value, change, chip, usual range, notes), with no Streamlit, so it is testable.
     - `display.py`: number formatting and the areas cards belong to. `charts.py`: Altair charts built from polars frames.

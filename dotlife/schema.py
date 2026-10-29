@@ -17,6 +17,7 @@ class Kind(StrEnum):
 
     DATE = "date"
     TIMESTAMP = "timestamp"
+    LOCAL_TIME = "local time"
     TEXT = "text"
 
 
@@ -200,6 +201,7 @@ def parse_number(text: str) -> float:
 PARSERS: dict[Kind, Callable[[str], Value]] = {
     Kind.DATE: date.fromisoformat,
     Kind.TIMESTAMP: parse_timestamp,
+    Kind.LOCAL_TIME: datetime.fromisoformat,
     Kind.TEXT: str,
 }
 

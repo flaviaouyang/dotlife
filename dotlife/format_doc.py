@@ -17,11 +17,12 @@ GRAINS = {
     Grain.SESSION: "one row per session",
     Grain.TRANSACTION: "one row per transaction",
     Grain.EVENT: "one row per event",
-    Grain.ENTRY: "one Markdown file per day",
+    Grain.ENTRY: "one text file per year, many entries a day",
 }
 KINDS = {
     Kind.DATE: "date",
     Kind.TIMESTAMP: "timestamp",
+    Kind.LOCAL_TIME: "local time",
     Kind.TEXT: "text",
 }
 SUMMARIES = {

@@ -38,7 +38,9 @@ pages = [
         default=True,
     ),
     st.Page("app_pages/trends.py", title="Trends", icon=":material/monitoring:"),
-    st.Page("app_pages/journal.py", title="Journal", icon=":material/book_2:"),
+    st.Page(
+        "app_pages/reflections.py", title="Reflections", icon=":material/edit_note:"
+    ),
     st.Page("app_pages/health.py", title="Data health", icon=":material/fact_check:"),
 ]
 navigation = st.navigation(pages, position="sidebar")
@@ -65,7 +67,7 @@ with st.sidebar:
         "Show sensitive",
         value=data.source.config.get("dashboard", {}).get("show_sensitive", False),
         key="show_sensitive",
-        help="Journal, cycle, medication, symptoms, glucose, finances, social and "
+        help="Reflections, cycle, medication, symptoms, glucose, finances, social and "
         "travel. Switch off before sharing your screen.",
     )
     if data.source.is_sample:

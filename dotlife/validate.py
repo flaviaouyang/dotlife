@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from dotlife.config import all_categories, context_for, plausible_range
-from dotlife.journal import journal_date
+from dotlife.reflections import file_year, parse_reflections, settings
 from dotlife.schema import (
     FORMAT_VERSION,
     Category,
@@ -354,32 +354,54 @@ def validate_csv(category: Category, path: Path, context: Context) -> FileReport
     return report
 
 
-def validate_journal(category: Category, folder: Path) -> FileReport:
-    """Validate a folder of daily Markdown files named ``YYYY-MM-DD.md``.
+def validate_reflections(
+    category: Category, folder: Path, context: Context
+) -> FileReport:
+    """Validate a folder of yearly reflections files named ``YYYY.txt``.
 
     Args:
-        category: The journal category.
-        folder: The journal folder.
+        category: The reflections category.
+        folder: The reflections folder.
+        context: Its settings: the time format and the tag symbols.
 
     Returns:
-        What was found: one row per valid entry, warnings for misnamed files.
+        What was found: one row per entry, warnings for misnamed files and stray
+        lines, errors for entries filed under the wrong year.
     """
     report = FileReport(category.name, str(folder), noun="entry")
-    dates: set[date] = set()
+    time_format, symbols = settings(context.options)
+    days: set[date] = set()
     for path in sorted(folder.iterdir()):
-        day = journal_date(path.name)
-        if day is None:
+        year = file_year(path.name)
+        if year is None:
             report.problems.append(
-                Problem(
-                    Severity.WARNING,
-                    f"{path.name} is not named YYYY-MM-DD.md; it is ignored",
-                )
+                Problem(Severity.WARNING, f"{path.name} is not named YYYY.txt; ignored")
             )
             continue
-        dates.add(day)
-    report.rows = len(dates)
-    if dates:
-        report.first_date, report.last_date = min(dates), max(dates)
+        with path.open(encoding="utf-8") as file:
+            parsed = parse_reflections(file.read(), time_format, symbols)
+        report.problems += [
+            Problem(
+                Severity.WARNING,
+                f"{path.name}: text before the first entry belongs to no entry",
+                line,
+            )
+            for line in parsed.stray_lines
+        ]
+        report.problems += [
+            Problem(
+                Severity.ERROR,
+                f"{path.name}: written on {reflection.day}, so it belongs in "
+                f"{reflection.time.year}.txt",
+                reflection.line,
+            )
+            for reflection in parsed.reflections
+            if reflection.time.year != year
+        ]
+        report.rows += len(parsed.reflections)
+        days.update(reflection.day for reflection in parsed.reflections)
+    if days:
+        report.first_date, report.last_date = min(days), max(days)
     return report
 
 
@@ -415,7 +437,7 @@ def data_path(category: Category, data_dir: Path) -> Path:
         data_dir: The data folder.
 
     Returns:
-        The file, or for the journal the folder.
+        The file, or for reflections the folder.
     """
     return data_dir / category.file.rstrip("/")
 
@@ -456,7 +478,7 @@ def validate_folder(data_dir: Path, config: Mapping[str, Any]) -> Report:
         elif not path.exists():
             report.missing.append(category.name)
         elif category.grain is Grain.ENTRY:
-            report.files.append(validate_journal(category, path))
+            report.files.append(validate_reflections(category, path, context))
         else:
             try:
                 report.files.append(validate_csv(category, path, context))

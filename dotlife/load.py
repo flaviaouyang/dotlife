@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import cast
 
 from dotlife.config import DataSource, all_categories, context_for
-from dotlife.journal import Entry, read_journal
+from dotlife.reflections import Reflection, read_reflections
 from dotlife.schema import Category, Context, Grain, Row, row_parser
 
 
@@ -20,21 +20,21 @@ class Dataset:
         rows: Parsed rows by category name; rows that don't parse are skipped
             (the validator reports them).
         contexts: Settings by category name.
-        journal: Journal entries, oldest first; empty without a journal folder.
+        reflections: Reflections, oldest first; empty without a reflections folder.
     """
 
     source: DataSource
     categories: tuple[Category, ...]
     rows: Mapping[str, list[Row]]
     contexts: Mapping[str, Context]
-    journal: tuple[Entry, ...]
+    reflections: tuple[Reflection, ...]
 
     @property
     def days(self) -> list[date]:
-        """Every date in the data, rows and journal entries alike, unsorted."""
+        """Every date in the data, rows and reflections alike, unsorted."""
         return [
             cast(date, row["date"]) for rows in self.rows.values() for row in rows
-        ] + [entry.day for entry in self.journal]
+        ] + [reflection.day for reflection in self.reflections]
 
     @property
     def first_day(self) -> date | None:
@@ -95,13 +95,14 @@ def load_dataset(source: DataSource) -> Dataset:
         for category in present
         if category.grain is not Grain.ENTRY
     }
-    journal_folder = next(
-        (
-            source.folder / category.file
-            for category in present
-            if category.grain is Grain.ENTRY
-        ),
-        None,
+    folder = next(
+        (category for category in present if category.grain is Grain.ENTRY), None
     )
-    journal = () if journal_folder is None else read_journal(journal_folder)
-    return Dataset(source, tuple(present), rows, contexts, journal)
+    reflections = (
+        ()
+        if folder is None
+        else read_reflections(
+            source.folder / folder.file, contexts[folder.name].options
+        )
+    )
+    return Dataset(source, tuple(present), rows, contexts, reflections)

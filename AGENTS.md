@@ -29,12 +29,12 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 - **One source per metric.** When two sources report the same metric, keep the one `sources.md` ranks higher. For weight, a smart-scale reading wins on any day it has one.
 - **Dates are local.** Weeks run Monday to Sunday in the time zone in `config.toml`. A night's sleep counts toward the date the person woke up.
 - **Record only new readings.** If a source keeps repeating an old value (e.g. VO2 max that only updates after an outdoor run), don't write it again as a new reading.
-- **Switched-off categories are off.** Don't fetch, write or discuss data for a category that is disabled in `config.toml`. Ask before switching on a sensitive category (journal, cycle, medication, symptoms, glucose, finances, social, travel).
+- **Switched-off categories are off.** Don't fetch, write or discuss data for a category that is disabled in `config.toml`. Ask before switching on a sensitive category (reflections, cycle, medication, symptoms, glucose, finances, social, travel).
 
 ## Privacy
 
 - This data is personal. Keep it in this repo. Don't send it anywhere `sources.md` doesn't already name, and don't put it in issues, pull requests or messages to dotlife.
-- Quote journal text sparingly and only when asked.
+- Quote reflections sparingly and only when asked.
 
 ## Changing dotlife's code
 

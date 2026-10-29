@@ -233,7 +233,7 @@ class CsvValidationTest(ValidatorTestCase):
 
 
 class FolderValidationTest(ValidatorTestCase):
-    """Folder-level behaviour: switched-off, missing, journal and custom metrics."""
+    """Folder-level behaviour: switched-off, missing, reflections, custom metrics."""
 
     def test_missing_and_disabled(self):
         """Disabled categories aren't read even when their file has errors."""
@@ -243,19 +243,23 @@ class FolderValidationTest(ValidatorTestCase):
         self.assertIn("activity", report.missing)
         self.assertEqual(report.error_count, 0)
 
-    def test_journal(self):
-        """Journal files count by date; misnamed ones are warnings."""
-        journal = self.data / "journal"
-        journal.mkdir()
-        for name in ("2026-01-05.md", "2026-01-07.md", "notes.md", "2026-02-30.md"):
-            (journal / name).write_text(
-                "Walked by the river. #outside\n", encoding="utf-8"
-            )
+    def test_reflections(self):
+        """Entries are counted; misfiled entries and stray text are flagged."""
+        folder = self.data / "reflections"
+        folder.mkdir()
+        (folder / "2026.txt").write_text(
+            "loose note\n"
+            "[2026-01-05 08:00] Morning. #outside\n"
+            "[2025-12-31 23:00] Wrong year.\n",
+            encoding="utf-8",
+        )
+        (folder / "notes.md").write_text("ignored", encoding="utf-8")
         report = self.validate()
-        (entry_report,) = report.files
-        self.assertEqual(entry_report.rows, 2)
-        self.assertEqual(entry_report.gaps, [])
+        (reflections,) = report.files
+        self.assertEqual(reflections.rows, 2)
         self.assertEqual(len(self.messages(report, Severity.WARNING)), 2)
+        (error,) = self.messages(report, Severity.ERROR)
+        self.assertIn("belongs in 2025.txt", error)
 
     def test_custom_metric(self):
         """A custom metric from config is validated like a built-in one."""

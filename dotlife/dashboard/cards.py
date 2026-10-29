@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from typing import Any, cast
@@ -200,8 +200,8 @@ def card_specs(category: Category) -> list[CardSpec]:
         return []
     if category.name == "workouts":
         return [CardSpec("workouts", None, "Workouts", Aggregate.SUM, "sessions", True)]
-    if category.name == "journal":
-        return [CardSpec("journal", None, "Journal entries", Aggregate.SUM, "entries")]
+    if category.name == "reflections":
+        return [CardSpec("reflections", None, "Reflections", Aggregate.SUM, "entries")]
     if category.name == "finances":
         return [CardSpec("finances", "amount", "Spending", Aggregate.SUM, "")]
     metrics = {metric.column: metric for metric in category.metrics}
@@ -276,8 +276,9 @@ def spec_daily(spec: CardSpec, dataset: Dataset) -> Daily:
     Returns:
         Values by date, in stored units. Spending is positive.
     """
-    if spec.category == "journal":
-        return {entry.day: 1.0 for entry in dataset.journal}
+    if spec.category == "reflections":
+        counts = Counter(reflection.day for reflection in dataset.reflections)
+        return {day: float(count) for day, count in counts.items()}
     rows = dataset.rows[spec.category]
     context = dataset.contexts[spec.category]
     if spec.clock_of is not None:
@@ -398,7 +399,7 @@ def breakdown(spec: CardSpec, dataset: Dataset, selection: Selection) -> str:
     Returns:
         E.g. "work 38.6 · leisure 25.1", largest first, or empty.
     """
-    if spec.column is None or spec.category == "journal":
+    if spec.column is None or spec.category == "reflections":
         return ""
     category = category_named(dataset, spec.category)
     items = [name for name in category.key if name != "date"]
@@ -429,7 +430,7 @@ def skipped_days(spec: CardSpec, dataset: Dataset, selection: Selection) -> int:
     Returns:
         How many of the period's rows were left out of averages.
     """
-    if spec.column is None or spec.category == "journal":
+    if spec.column is None or spec.category == "reflections":
         return 0
     category = category_named(dataset, spec.category)
     if category.day_filter is None:

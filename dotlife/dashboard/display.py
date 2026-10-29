@@ -33,7 +33,7 @@ AREA_OF = {
         ),
         "Body and health",
     ),
-    **dict.fromkeys(("mood", "journal"), "Mind"),
+    **dict.fromkeys(("mood", "reflections"), "Mind"),
     **dict.fromkeys(("time", "screen_time", "tasks"), "Time and work"),
     **dict.fromkeys(("habits", "reading", "learning", "media"), "Habits and leisure"),
     "finances": "Money",

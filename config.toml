@@ -16,7 +16,7 @@ show_sensitive = false       # sensitive categories stay hidden until shown in t
 usual_range = { week = 8, month = 6 }   # full periods behind the "usual range" band
 
 # Categories: activity, workouts, sleep, heart, body, fitness_markers, vitals,
-# nutrition, mindfulness, cycle, medication, symptoms, glucose, mood, journal, time,
+# nutrition, mindfulness, cycle, medication, symptoms, glucose, mood, reflections, time,
 # screen_time, tasks, habits, reading, learning, media, finances, events, weather,
 # social, travel.
 #
@@ -33,6 +33,10 @@ watch_off_sedentary_min = 480
 [fitness_markers]
 # Many watches only update VO2 max after an outdoor run with GPS.
 stale_after_days = { vo2max_ml_kg_min = 90 }
+
+[reflections]
+time_format = "%Y-%m-%d %H:%M"    # for a jrnl file, use jrnl's "%Y-%m-%d %I:%M:%S %p"
+tag_symbols = "#@"                # words starting with these are tags
 
 [finances]
 home_currency = "EUR"             # ISO 4217; other currencies are flagged, not converted

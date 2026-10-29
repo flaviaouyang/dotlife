@@ -20,10 +20,10 @@ class SampleDatasetTest(unittest.TestCase):
         cls.dataset = load_dataset(find_data(ROOT / "config.toml", ROOT / "sample"))
 
     def test_everything_loads(self):
-        """All 28 categories, every activity row, and the journal."""
+        """All 28 categories, every activity row, and the reflections."""
         self.assertEqual(len(self.dataset.categories), 28)
         self.assertEqual(len(self.dataset.rows["activity"]), 179)
-        self.assertEqual(len(self.dataset.journal), 59)
+        self.assertEqual(len(self.dataset.reflections), 159)
         self.assertEqual(self.dataset.as_of, date(2026, 8, 30))
 
     def test_weekly_steps(self):

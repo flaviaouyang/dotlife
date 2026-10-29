@@ -8,7 +8,7 @@ Format version 1, set as `format_version` in `config.toml`. This file is the sou
 - A data folder can hold its own `config.toml`, which then wins over the repo's. The sample data does this, so it keeps its own time zone.
 - Each category has its own file, named in its section below. A category whose file is missing simply doesn't show; nothing else breaks.
 - `enabled = false` in a category's config section switches it off everywhere: the dashboard hides it, the validator skips it, and sync never fetches it.
-- Data files are CSV (UTF-8, comma-separated, with a header row), except the journal, which is Markdown.
+- Data files are CSV (UTF-8, comma-separated, with a header row), except reflections, which are plain text.
 - Columns can be in any order. The tables below show the suggested order.
 - Fields marked *required* must be present on every row. A metric column can be left out of the file entirely when you never have that metric: an activity file with only `date`, `source` and `steps` is valid.
 
@@ -47,10 +47,16 @@ Every number is checked in up to three ways:
 2. **Plausible bounds** mark unlikely values, like 70,000 steps. They are warnings. Override them in `config.toml`, e.g. `plausible = { steps = [0, 150000] }` under `[activity]`.
 3. **Stale and stuck values.** A value that hasn't changed for `stale_after_days` (set per metric in config) is marked stale. A value that stays flat while its related metrics move beyond their usual range is marked stuck. Both are shown with the date of the last real reading and left out of trends. Nothing is corrected or filled in.
 
-## The journal
+## Reflections
 
-- One Markdown file per day: `journal/YYYY-MM-DD.md`, named by the local date.
-- The text is free-form. Words starting with `#` are tags.
+Short, text-only notes written through the day, in the plain-text format [jrnl](https://jrnl.sh) uses, so a jrnl file can be read as it is.
+
+- One file a year: `reflections/2026.txt`.
+- Each entry starts with its local time in brackets, then its text: `[2026-08-24 22:40] Found a replay attack in section 3. #work`. Lines after it belong to the same entry until the next one.
+- A day can have any number of entries. A trailing `*` stars an entry.
+- Words starting with `#` or `@` are tags.
+- `time_format` and `tag_symbols` in `[reflections]` change the format. The default time format is `%Y-%m-%d %H:%M`; for jrnl's default, use `%Y-%m-%d %I:%M:%S %p`.
+- Entries are plain text, not Markdown. Days without one are not gaps.
 
 ## Transactions
 
@@ -266,13 +272,13 @@ Config section `[mood]`. `mood.csv`, one row per day, unique: `date`.
 | `energy` | number | 1-5 | no | 1 to 5 |  | average | higher |
 | `stress` | number | 1-5 | no | 1 to 5 |  | average | lower |
 
-### Journal
+### Reflections
 
-Config section `[journal]`. `journal/`, one Markdown file per day, unique: `date`, sensitive.
+Config section `[reflections]`. `reflections/`, one text file per year, many entries a day, sensitive.
 
 | Column | Type | Unit | Required | Limits | Plausible | Summary | Better |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `date` | date | | yes | | | | |
+| `time` | local time | | yes | | | | |
 | `text` | text | | yes | | | | |
 
 ### Time use

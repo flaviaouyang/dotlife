@@ -351,13 +351,14 @@ MOOD = daily(
     ),
 )
 
-JOURNAL = Category(
-    name="journal",
-    label="Journal",
-    file="journal/",
+REFLECTIONS = Category(
+    name="reflections",
+    label="Reflections",
+    file="reflections/",
     grain=Grain.ENTRY,
-    fields=(DATE, text("text")),
+    fields=(Field("time", Kind.LOCAL_TIME), text("text")),
     metrics=(),
+    key=(),
     sensitive=True,
 )
 
@@ -485,7 +486,7 @@ CATEGORIES = (
     SYMPTOMS,
     GLUCOSE,
     MOOD,
-    JOURNAL,
+    REFLECTIONS,
     TIME,
     SCREEN_TIME,
     TASKS,

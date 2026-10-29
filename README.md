@@ -57,7 +57,7 @@ Every category is optional. It shows up when its file exists, and `enabled = fal
 | Area | Categories |
 | --- | --- |
 | Body and health | activity, workouts, sleep, heart, body, fitness markers, vitals, nutrition, mindfulness, menstrual cycle\*, medication\*, symptoms\*, blood glucose\* |
-| Mind | mood, journal\* |
+| Mind | mood, reflections\* |
 | Time and work | time use, screen time, tasks |
 | Habits and leisure | habits, reading, learning, media |
 | Money | finances\* |

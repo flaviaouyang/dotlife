@@ -15,7 +15,7 @@ APP = ROOT / "dotlife" / "dashboard" / "app.py"
 PAGES = (
     "app_pages/overview.py",
     "app_pages/trends.py",
-    "app_pages/journal.py",
+    "app_pages/reflections.py",
     "app_pages/health.py",
 )
 

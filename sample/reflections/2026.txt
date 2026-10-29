@@ -1,0 +1,159 @@
+[2026-03-04 09:15] Coffee, then an hour on the paper before standup.
+[2026-03-04 15:10] Bouldering after work; finally sent the blue problem. #climbing
+[2026-03-04 19:10] Early to bed, for once. *
+[2026-03-05 17:00] Long walk along the canal. #walking
+[2026-03-08 10:00] Quiet morning; read in bed for an hour.
+[2026-03-08 20:55] Early to bed, for once.
+[2026-03-10 07:00] Woke before the alarm; checked the pager anyway.
+[2026-03-10 17:30] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-03-10 20:15] Early to bed, for once.
+[2026-03-11 22:35] Trust, but verify.
+[2026-03-14 07:35] Grey London morning. Cycled in.
+[2026-03-14 17:40] Long walk along the canal. #walking
+[2026-03-18 14:10] Pretty sure Eve has been reading my messages again. Rotated everything. #security
+[2026-03-18 22:30] Early to bed, for once.
+[2026-03-19 07:30] Slept badly; dreamt about nonces.
+[2026-03-19 12:50] Dinner with Bob, no laptops at the table. #bob *
+[2026-03-19 20:25] Trust, but verify.
+[2026-03-24 08:30] Coffee, then an hour on the paper before standup.
+[2026-03-24 14:30] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-03-25 09:35] Quiet morning; read in bed for an hour.
+[2026-03-25 22:00] Tomorrow: fewer meetings, more maths.
+[2026-03-30 08:35] Woke before the alarm; checked the pager anyway.
+[2026-03-30 17:10] Code review marathon: three nits and one real bug. #work
+[2026-03-31 22:25] Tomorrow: fewer meetings, more maths.
+[2026-04-01 20:35] Tomorrow: fewer meetings, more maths.
+[2026-04-02 09:30] Quiet morning; read in bed for an hour.
+[2026-04-04 13:10] Found a replay attack in section 3 of the protocol draft. #work
+[2026-04-04 19:35] Trust, but verify.
+[2026-04-08 14:00] Found a replay attack in section 3 of the protocol draft. #work
+[2026-04-08 19:00] Trust, but verify.
+[2026-04-10 09:15] Quiet morning; read in bed for an hour. *
+[2026-04-10 14:00] Long walk along the canal. #walking
+[2026-04-10 21:45] Remember: Eve is always listening.
+[2026-04-11 22:35] Early to bed, for once.
+[2026-04-12 08:15] Coffee, then an hour on the paper before standup.
+[2026-04-12 20:20] Early to bed, for once.
+[2026-04-13 08:50] Slept badly; dreamt about nonces.
+[2026-04-15 10:15] Woke before the alarm; checked the pager anyway.
+[2026-04-18 12:30] An hour of Rust; the borrow checker won. #learning
+[2026-04-18 22:25] Tomorrow: fewer meetings, more maths.
+[2026-04-19 15:00] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-04-19 20:00] Trust, but verify.
+[2026-04-20 13:30] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-04-20 22:20] Early to bed, for once.
+[2026-04-21 07:00] Coffee, then an hour on the paper before standup.
+[2026-04-21 13:40] An hour of Rust; the borrow checker won. #learning
+[2026-04-23 07:45] Woke before the alarm; checked the pager anyway.
+[2026-04-23 15:55] Code review marathon: three nits and one real bug. #work
+[2026-04-23 22:05] Trust, but verify.
+[2026-04-25 22:30] Trust, but verify.
+[2026-05-01 09:35] Coffee, then an hour on the paper before standup.
+[2026-05-01 14:30] Found a replay attack in section 3 of the protocol draft. #work
+[2026-05-01 20:20] Trust, but verify.
+[2026-05-04 13:15] An hour of Rust; the borrow checker won. #learning
+[2026-05-04 21:50] Tomorrow: fewer meetings, more maths.
+[2026-05-06 12:05] Pretty sure Eve has been reading my messages again. Rotated everything. #security
+[2026-05-08 10:35] Woke before the alarm; checked the pager anyway.
+[2026-05-08 16:40] Long walk along the canal. #walking
+[2026-05-09 10:55] Coffee, then an hour on the paper before standup.
+[2026-05-09 16:25] Code review marathon: three nits and one real bug. #work
+[2026-05-09 19:05] Trust, but verify.
+[2026-05-11 14:10] Found a replay attack in section 3 of the protocol draft. #work
+[2026-05-12 10:05] Woke before the alarm; checked the pager anyway.
+[2026-05-12 14:45] Bouldering after work; finally sent the blue problem. #climbing
+[2026-05-12 21:25] Tomorrow: fewer meetings, more maths.
+[2026-05-13 07:50] Grey London morning. Cycled in.
+[2026-05-13 19:10] Tomorrow: fewer meetings, more maths.
+[2026-05-14 07:25] Slept badly; dreamt about nonces.
+[2026-05-14 14:05] Pretty sure Eve has been reading my messages again. Rotated everything. #security
+[2026-05-14 23:10] Remember: Eve is always listening.
+[2026-05-15 15:55] Long walk along the canal. #walking
+[2026-05-17 08:50] Woke before the alarm; checked the pager anyway.
+[2026-05-17 22:55] Early to bed, for once.
+[2026-05-23 07:20] Coffee, then an hour on the paper before standup.
+[2026-05-23 15:35] Bouldering after work; finally sent the blue problem. #climbing *
+[2026-05-26 10:00] Grey London morning. Cycled in.
+[2026-06-04 08:55] Slept badly; dreamt about nonces.
+[2026-06-04 22:50] Tomorrow: fewer meetings, more maths.
+[2026-06-05 16:50] An hour of Rust; the borrow checker won. #learning
+[2026-06-05 22:40] Trust, but verify.
+[2026-06-06 16:40] Pretty sure Eve has been reading my messages again. Rotated everything. #security *
+[2026-06-07 10:25] Woke before the alarm; checked the pager anyway.
+[2026-06-07 17:15] Code review marathon: three nits and one real bug. #work
+[2026-06-07 21:50] Tomorrow: fewer meetings, more maths.
+[2026-06-09 09:40] Quiet morning; read in bed for an hour.
+[2026-06-12 07:10] Slept badly; dreamt about nonces.
+[2026-06-12 15:55] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-06-12 21:35] Trust, but verify.
+[2026-06-14 08:55] Woke before the alarm; checked the pager anyway.
+[2026-06-15 20:35] Tomorrow: fewer meetings, more maths.
+[2026-06-16 10:35] Quiet morning; read in bed for an hour.
+[2026-06-16 14:25] Code review marathon: three nits and one real bug. #work *
+[2026-06-16 19:30] Early to bed, for once.
+[2026-06-18 08:35] Slept badly; dreamt about nonces.
+[2026-06-18 17:55] Bouldering after work; finally sent the blue problem. #climbing
+[2026-06-18 22:50] Trust, but verify.
+[2026-06-21 15:25] Found a replay attack in section 3 of the protocol draft. #work
+[2026-06-22 16:15] An hour of Rust; the borrow checker won. #learning
+[2026-06-26 10:45] Grey London morning. Cycled in.
+[2026-06-26 13:05] Dinner with Bob, no laptops at the table. #bob
+[2026-06-30 15:10] Found a replay attack in section 3 of the protocol draft. #work
+[2026-06-30 20:10] Remember: Eve is always listening.
+[2026-07-04 14:50] Pretty sure Eve has been reading my messages again. Rotated everything. #security
+[2026-07-06 17:35] An hour of Rust; the borrow checker won. #learning
+[2026-07-08 19:10] Trust, but verify.
+[2026-07-09 10:20] Grey London morning. Cycled in.
+[2026-07-12 07:40] Coffee, then an hour on the paper before standup.
+[2026-07-13 08:00] Grey London morning. Cycled in.
+[2026-07-13 14:50] Code review marathon: three nits and one real bug. #work
+[2026-07-14 07:20] Coffee, then an hour on the paper before standup.
+[2026-07-14 15:20] Pretty sure Eve has been reading my messages again. Rotated everything. #security
+[2026-07-14 19:00] Remember: Eve is always listening.
+[2026-07-15 07:05] Slept badly; dreamt about nonces.
+[2026-07-15 13:10] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-07-15 19:00] Early to bed, for once.
+[2026-07-16 07:00] Grey London morning. Cycled in.
+[2026-07-17 10:30] Woke before the alarm; checked the pager anyway.
+[2026-07-21 08:10] Slept badly; dreamt about nonces.
+[2026-07-21 12:05] An hour of Rust; the borrow checker won. #learning
+[2026-07-21 22:55] Tomorrow: fewer meetings, more maths.
+[2026-07-23 19:55] Early to bed, for once.
+[2026-07-28 07:40] Woke before the alarm; checked the pager anyway.
+[2026-07-28 13:50] Bouldering after work; finally sent the blue problem. #climbing
+[2026-07-28 20:55] Remember: Eve is always listening.
+[2026-08-03 09:10] Woke before the alarm; checked the pager anyway.
+[2026-08-03 13:55] Found a replay attack in section 3 of the protocol draft. #work
+[2026-08-05 10:50] Grey London morning. Cycled in.
+[2026-08-05 12:45] Code review marathon: three nits and one real bug. #work
+[2026-08-08 14:00] Code review marathon: three nits and one real bug. #work
+[2026-08-09 07:55] Woke before the alarm; checked the pager anyway.
+[2026-08-10 07:40] Quiet morning; read in bed for an hour.
+[2026-08-10 16:30] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-08-10 20:45] Trust, but verify.
+[2026-08-13 10:30] Quiet morning; read in bed for an hour.
+[2026-08-13 20:35] Remember: Eve is always listening.
+[2026-08-15 19:50] Early to bed, for once.
+[2026-08-17 09:45] Slept badly; dreamt about nonces.
+[2026-08-17 17:50] An hour of Rust; the borrow checker won. #learning
+[2026-08-17 19:30] Early to bed, for once.
+[2026-08-18 07:35] Slept badly; dreamt about nonces.
+[2026-08-18 13:05] Bob and I agreed on a new shared secret for the flat. #bob
+[2026-08-18 20:10] Tomorrow: fewer meetings, more maths.
+[2026-08-19 10:00] Grey London morning. Cycled in. *
+[2026-08-19 17:00] Code review marathon: three nits and one real bug. #work *
+[2026-08-19 21:05] Trust, but verify.
+[2026-08-20 07:00] Coffee, then an hour on the paper before standup.
+[2026-08-20 14:00] Long walk along the canal. #walking *
+[2026-08-20 20:25] Early to bed, for once.
+[2026-08-23 10:30] Woke before the alarm; checked the pager anyway.
+[2026-08-23 21:15] Remember: Eve is always listening.
+[2026-08-24 23:15] Remember: Eve is always listening.
+[2026-08-27 13:50] Long walk along the canal. #walking
+[2026-08-28 10:40] Grey London morning. Cycled in.
+[2026-08-28 15:10] Found a replay attack in section 3 of the protocol draft. #work
+[2026-08-28 23:20] Trust, but verify.
+[2026-08-29 15:35] Long walk along the canal. #walking
+[2026-08-30 08:30] Coffee, then an hour on the paper before standup.
+[2026-08-30 16:25] Bouldering after work; finally sent the blue problem. #climbing
+[2026-08-30 22:45] Tomorrow: fewer meetings, more maths. *
