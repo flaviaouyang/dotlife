@@ -19,49 +19,78 @@ CARD_STYLE = """
 """
 
 
-def menu_actions(
-    card: Card, layout: Layout, category: str
-) -> dict[str, tuple[str, str, bool]]:
-    """List what a card's menu offers, given what is already pinned.
+def apply_choice(
+    choice: str | None, actions: Mapping[str, tuple[str, str, bool]]
+) -> None:
+    """Save a menu choice to config.toml and redraw the page.
+
+    Args:
+        choice: The chosen menu item, or None when nothing was chosen.
+        actions: Menu text mapped to (list name, key, add or remove).
+    """
+    if choice is None:
+        return
+    set_listed(*actions[choice])
+    st.rerun()
+
+
+def card_actions(card: Card, layout: Layout) -> dict[str, tuple[str, str, bool]]:
+    """List what an Overview card's menu offers.
 
     Args:
         card: The card.
-        layout: The current pins and hides.
-        category: The card's category label, e.g. "Activity".
+        layout: The Overview's pins and hides.
 
     Returns:
         Menu text mapped to (list name, key, add or remove).
     """
-    name = card.key.split(".")[0]
-    card_pinned = card.key in layout.pinned
-    category_pinned = name in layout.pinned
+    pinned = card.key in layout.pinned
     return {
-        "Unpin card" if card_pinned else "Pin card to the top": (
-            "pinned",
+        "Unpin card" if pinned else "Pin card to the top": (
+            "pinned_cards",
             card.key,
-            not card_pinned,
+            not pinned,
         ),
-        f"Unpin all of {category}" if category_pinned else f"Pin all of {category}": (
-            "pinned",
-            name,
-            not category_pinned,
-        ),
-        "Hide card": ("hidden", card.key, True),
-        f"Hide all of {category}": ("hidden", name, True),
+        "Hide card": ("hidden_cards", card.key, True),
     }
 
 
-def show_card(
-    card: Card, selection: Selection, section: str, layout: Layout, category: str
-) -> None:
+def category_menu(name: str, label: str, layout: Layout) -> None:
+    """Draw the Trends menu that pins or hides the category on show.
+
+    Args:
+        name: The category's name.
+        label: The category's label, e.g. "Sleep".
+        layout: The Trends pins and hides.
+    """
+    pinned = name in layout.pinned
+    actions = {
+        f"Unpin {label}" if pinned else f"Pin {label} to the front": (
+            "pinned_categories",
+            name,
+            not pinned,
+        ),
+        f"Hide {label}": ("hidden_categories", name, True),
+    }
+    choice = st.menu_button(
+        "",
+        list(actions),
+        icon=":material/more_horiz:",
+        type="tertiary",
+        key=f"category-menu-{name}",
+        help=f"Pin or hide {label}",
+    )
+    apply_choice(choice, actions)
+
+
+def show_card(card: Card, selection: Selection, section: str, layout: Layout) -> None:
     """Draw one Overview card, with a menu that appears on hover.
 
     Args:
         card: The card's content.
         selection: The chosen period.
         section: Where it is drawn ("pinned" or an area), to keep widget keys unique.
-        layout: The current pins and hides, for the menu.
-        category: The card's category label, for the menu.
+        layout: The Overview's pins and hides, for the menu.
     """
     period = selection.period.value
     with st.container(border=True, height="stretch", key=f"card-{section}-{card.key}"):
@@ -71,7 +100,7 @@ def show_card(
             vertical_alignment="center",
         ):
             st.badge(card.chip, color=card.color)
-            actions = menu_actions(card, layout, category)
+            actions = card_actions(card, layout)
             choice = st.menu_button(
                 "",
                 list(actions),
@@ -80,9 +109,7 @@ def show_card(
                 key=f"menu-{section}-{card.key}",
                 help="Pin or hide this card",
             )
-            if choice is not None:
-                set_listed(*actions[choice])
-                st.rerun()
+            apply_choice(choice, actions)
         st.metric(
             card.label,
             card.value,
@@ -110,11 +137,7 @@ def show_card(
 
 
 def show_grid(
-    cards: list[Card],
-    selection: Selection,
-    section: str,
-    layout: Layout,
-    labels: Mapping[str, str],
+    cards: list[Card], selection: Selection, section: str, layout: Layout
 ) -> None:
     """Draw cards in rows of four.
 
@@ -122,52 +145,37 @@ def show_grid(
         cards: The cards, in order.
         selection: The chosen period.
         section: The section's name, to keep widget keys unique.
-        layout: The current pins and hides.
-        labels: Category labels by category name.
+        layout: The Overview's pins and hides.
     """
     for first in range(0, len(cards), COLUMNS):
         row = cards[first : first + COLUMNS]
         for column, card in zip(st.columns(COLUMNS), row, strict=False):
             with column:
-                category = card.key.split(".")[0]
-                show_card(
-                    card, selection, section, layout, labels.get(category, category)
-                )
+                show_card(card, selection, section, layout)
 
 
 def show_hidden(
-    layout: Layout, labels: Mapping[str, str], card_labels: Mapping[str, str]
+    hidden: tuple[str, ...], labels: Mapping[str, str], list_name: str, noun: str
 ) -> None:
-    """List hidden cards and categories, each with a button to show it again.
+    """List hidden cards or categories, each with a button to show it again.
 
     Args:
-        layout: The current pins and hides.
-        labels: Category labels by category name.
-        card_labels: Card labels by card key.
+        hidden: The hidden keys.
+        labels: Labels by key.
+        list_name: The config list they live in, e.g. ``hidden_cards``.
+        noun: What they are, singular and plural, e.g. ``card/cards``.
     """
-    if not layout.hidden:
+    if not hidden:
         return
-    cards = sum("." in entry for entry in layout.hidden)
-    categories = len(layout.hidden) - cards
-    parts = [
-        f"{cards} card{'' if cards == 1 else 's'}" if cards else "",
-        f"{categories} categor{'y' if categories == 1 else 'ies'}"
-        if categories
-        else "",
-    ]
-    with st.expander(f"Hidden: {', '.join(part for part in parts if part)}"):
-        for entry in layout.hidden:
-            name = (
-                card_labels.get(entry, entry)
-                if "." in entry
-                else f"All of {labels.get(entry, entry)}"
-            )
+    one, many = noun.split("/")
+    with st.expander(f"Hidden: {len(hidden)} {one if len(hidden) == 1 else many}"):
+        for key in hidden:
             with st.container(horizontal=True, vertical_alignment="center"):
-                st.markdown(name)
+                st.markdown(labels.get(key, key))
                 st.button(
                     "Show again",
-                    key=f"unhide-{entry}",
+                    key=f"unhide-{list_name}-{key}",
                     type="tertiary",
                     on_click=set_listed,
-                    args=("hidden", entry, False),
+                    args=(list_name, key, False),
                 )

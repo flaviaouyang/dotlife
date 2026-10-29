@@ -14,8 +14,10 @@ glucose = "mmol/L"           # "mmol/L" or "mg/dL"; files always store mmol/L
 period = "week"              # "week" (Monday to Sunday) or "month"
 show_sensitive = false       # sensitive categories stay hidden until shown in the dashboard
 usual_range = { week = 8, month = 6 }   # full periods behind the "usual range" band
-pinned = []                  # cards ("activity.steps") or categories ("sleep") shown first
-hidden = []                  # cards or categories left out of the Overview and Trends
+pinned_cards = []            # Overview cards shown first, e.g. "activity.steps"
+hidden_cards = []            # Overview cards left out
+pinned_categories = []       # Trends categories shown first, e.g. "sleep"
+hidden_categories = []       # Trends categories left out
 
 # Categories: activity, workouts, sleep, heart, body, fitness_markers, vitals,
 # nutrition, mindfulness, cycle, medication, symptoms, glucose, mood, reflections, time,

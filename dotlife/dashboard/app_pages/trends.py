@@ -7,12 +7,12 @@ from dotlife.dashboard.cards import (
     display_goal,
     period_target,
     read,
-    spec_key,
     trend_specs,
 )
 from dotlife.dashboard.charts import nights_chart, trend_chart
 from dotlife.dashboard.data import dataset, layout, period_title, selection
 from dotlife.dashboard.display import format_value, hours_minutes
+from dotlife.dashboard.widgets import category_menu, show_hidden
 from dotlife.periods import Period, period_end
 
 HISTORY = {
@@ -24,27 +24,21 @@ HISTORY = {
 
 data = dataset()
 chosen = selection()
-arrangement = layout()
+arrangement = layout("categories")
 categories = [
     category
     for category in data.categories
     if category.metrics
     and category.name != "events"
     and (chosen.show_sensitive or not category.sensitive)
-    and not arrangement.is_hidden(category.name)
+    and category.name not in arrangement.hidden
 ]
-pin_ranks = {
-    category.name: min(
-        (
-            rank
-            for rank, entry in enumerate(arrangement.pinned)
-            if entry.split(".")[0] == category.name
-        ),
-        default=len(arrangement.pinned),
+categories.sort(
+    key=lambda category: (
+        arrangement.pin_rank(category.name) is None,
+        arrangement.pin_rank(category.name) or 0,
     )
-    for category in categories
-}
-categories.sort(key=lambda category: pin_ranks[category.name])
+)
 
 st.title("Trends")
 if not categories:
@@ -52,15 +46,16 @@ if not categories:
 else:
     names = [category.name for category in categories]
     labels = {category.name: category.label for category in categories}
+    name = st.pills(
+        "Category",
+        names,
+        default="sleep" if "sleep" in names else names[0],
+        required=True,
+        format_func=lambda option: labels[option],
+        key="trend_category",
+    )
+    category = categories[names.index(cast(str, name))]
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        name = st.pills(
-            "Category",
-            names,
-            default="sleep" if "sleep" in names else names[0],
-            required=True,
-            format_func=lambda option: labels[option],
-            key="trend_category",
-        )
         history = st.segmented_control(
             "History",
             list(HISTORY),
@@ -68,7 +63,7 @@ else:
             required=True,
             key="trend_history",
         )
-    category = categories[names.index(cast(str, name))]
+        category_menu(category.name, category.label, arrangement)
     limit = HISTORY[cast(str, history)][chosen.period]
     events = [
         (cast(date, row["date"]), cast(str, row["label"]))
@@ -82,8 +77,6 @@ else:
     )
 
     for spec in trend_specs(category):
-        if arrangement.is_hidden(spec_key(spec)):
-            continue
         reading = read(spec, data, chosen)
         if reading is None:
             continue
@@ -162,3 +155,10 @@ else:
                     ),
                     alt="Bars from bedtime to wake-up for each night of the week",
                 )
+
+show_hidden(
+    arrangement.hidden,
+    {category.name: category.label for category in data.categories},
+    "hidden_categories",
+    "category/categories",
+)

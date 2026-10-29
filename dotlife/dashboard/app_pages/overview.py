@@ -7,9 +7,8 @@ from dotlife.dashboard.widgets import CARD_STYLE, show_grid, show_hidden
 
 data = dataset()
 chosen = selection()
-arrangement = layout()
+arrangement = layout("cards")
 overview = build_overview(data, chosen, arrangement)
-labels = {category.name: category.label for category in data.categories}
 period = chosen.period.value
 count = usual_periods(data.source.config, chosen.period)
 st.html(CARD_STYLE)
@@ -35,13 +34,13 @@ pinned_cards = sorted(
 )
 if pinned_cards:
     st.subheader("Pinned")
-    show_grid(pinned_cards, chosen, "pinned", arrangement, labels)
+    show_grid(pinned_cards, chosen, "pinned", arrangement)
 
 for area in AREAS:
     cards = [card for card in overview.cards if card.area == area]
     if cards:
         st.subheader(area)
-        show_grid(cards, chosen, area, arrangement, labels)
+        show_grid(cards, chosen, area, arrangement)
 
 if overview.missing:
     st.caption(f"No data this {period}: {', '.join(overview.missing)}.")
@@ -55,4 +54,4 @@ if not pinned_cards:
         "Use a card's menu to pin it to the top or hide it. Your choices are saved "
         "in config.toml."
     )
-show_hidden(arrangement, labels, card_labels(data))
+show_hidden(arrangement.hidden, card_labels(data), "hidden_cards", "card/cards")

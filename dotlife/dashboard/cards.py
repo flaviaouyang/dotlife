@@ -95,46 +95,29 @@ class Selection:
 
 @dataclass(frozen=True, slots=True)
 class Layout:
-    """Which cards and categories are pinned to the top or hidden.
+    """What is pinned to the front and what is hidden, on one page.
 
-    Entries are card keys (``activity.steps``) or category names (``sleep``),
-    which cover every card of that category.
+    The Overview's layout holds card keys (``activity.steps``); the Trends layout
+    holds category names (``sleep``). The two are kept separately.
 
     Attributes:
-        pinned: Pinned entries, in the order they were pinned.
-        hidden: Hidden entries.
+        pinned: Pinned keys, in the order they were pinned.
+        hidden: Hidden keys.
     """
 
     pinned: tuple[str, ...] = ()
     hidden: tuple[str, ...] = ()
 
-    def is_hidden(self, key: str) -> bool:
-        """Tell whether a card or category is hidden.
-
-        Args:
-            key: A card key or a category name.
-
-        Returns:
-            True if it, or its category, is hidden.
-        """
-        return key in self.hidden or key.split(".")[0] in self.hidden
-
     def pin_rank(self, key: str) -> int | None:
-        """Return where a card or category sits among the pins.
+        """Return where a key sits among the pins.
 
         Args:
             key: A card key or a category name.
 
         Returns:
-            Its position among the pinned entries (its own or its category's,
-            whichever comes first), or None when it isn't pinned.
+            Its position among the pins, or None when it isn't pinned.
         """
-        ranks = [
-            rank
-            for rank, entry in enumerate(self.pinned)
-            if entry in (key, key.split(".")[0])
-        ]
-        return min(ranks, default=None)
+        return self.pinned.index(key) if key in self.pinned else None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1021,8 +1004,8 @@ def build_overview(
     Args:
         dataset: The loaded data.
         selection: The chosen period and options.
-        layout: Pins and hides; hidden cards and categories are left out,
-            including from "Notable".
+        layout: The Overview's pins and hides; hidden cards are left out, including
+            from "Notable".
 
     Returns:
         The cards to show, the notable ones, what has no data, and what is hidden.
@@ -1036,9 +1019,8 @@ def build_overview(
     specs = [
         spec
         for category in shown
-        if not layout.is_hidden(category.name)
         for spec in card_specs(category)
-        if not layout.is_hidden(spec_key(spec))
+        if spec_key(spec) not in layout.hidden
     ]
     built = [(spec, build_card(spec, dataset, selection)) for spec in specs]
     cards = [card for _, card in built if card is not None]

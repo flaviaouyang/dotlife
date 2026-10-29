@@ -35,7 +35,9 @@ class DashboardSmokeTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         config = Path(self.temp.name) / "config.toml"
         document = tomlkit.parse((ROOT / "config.toml").read_text(encoding="utf-8"))
-        document["dashboard"]["pinned"] = []
+        for name in ("cards", "categories"):
+            document["dashboard"][f"pinned_{name}"] = []
+            document["dashboard"][f"hidden_{name}"] = []
         config.write_text(tomlkit.dumps(document), encoding="utf-8")
         shutil.copytree(ROOT / "sample", Path(self.temp.name) / "sample")
         os.environ[CONFIG_ENV] = str(config)
@@ -89,7 +91,7 @@ class DashboardSmokeTest(unittest.TestCase):
             self.assertEqual(labels, ["Steps", "Active time", "Time asleep", "Bedtime"])
 
     def menu(self, app: AppTest, key: str) -> MenuButton:
-        """Find a card's menu by its widget key.
+        """Find a menu by its widget key.
 
         Args:
             app: The running app.
@@ -101,8 +103,8 @@ class DashboardSmokeTest(unittest.TestCase):
         menus = (cast(MenuButton, menu) for menu in app.get("menu_button"))
         return next(menu for menu in menus if menu.key == key)
 
-    def test_pin_hide_and_show_again(self):
-        """The card menu pins and hides; the Hidden list brings things back."""
+    def test_pin_hide_and_show_card(self):
+        """The card menu pins and hides one card; the Hidden list brings it back."""
         config = Path(os.environ[CONFIG_ENV])
         app = AppTest.from_file(str(APP), default_timeout=30).run()
 
@@ -110,25 +112,47 @@ class DashboardSmokeTest(unittest.TestCase):
             "Pin card to the top"
         ).run()
         self.assertIn("Pinned", [header.value for header in app.subheader])
-        self.assertIn('pinned = ["activity.steps"]', config.read_text(encoding="utf-8"))
+        saved = config.read_text(encoding="utf-8")
+        self.assertIn('pinned_cards = ["activity.steps"]', saved)
         self.menu(app, "menu-pinned-activity.steps").click("Unpin card").run()
         self.assertNotIn("Pinned", [header.value for header in app.subheader])
 
-        self.menu(app, "menu-Body and health-activity.steps").click(
-            "Hide all of Activity"
-        ).run()
-        self.assertNotIn("Steps", [metric.label for metric in app.metric])
+        self.menu(app, "menu-Body and health-activity.steps").click("Hide card").run()
+        labels = [metric.label for metric in app.metric]
+        self.assertNotIn("Steps", labels)
+        self.assertIn("Active time", labels)
         saved = config.read_text(encoding="utf-8")
-        self.assertIn('hidden = ["activity"]', saved)
-        self.assertIn("# cards or categories left out", saved)
+        self.assertIn('hidden_cards = ["activity.steps"]', saved)
+        self.assertIn("# Overview cards left out", saved)
         app.switch_page("app_pages/trends.py").run()
-        self.assertNotIn("Activity", app.pills(key="trend_category").options)
-        self.assertIn("Sleep", app.pills(key="trend_category").options)
+        self.assertIn("Activity", app.pills(key="trend_category").options)
 
         app.switch_page("app_pages/overview.py").run()
-        app.button(key="unhide-activity").click().run()
+        app.button(key="unhide-hidden_cards-activity.steps").click().run()
         self.assertIn("Steps", [metric.label for metric in app.metric])
-        self.assertIn("hidden = []", config.read_text(encoding="utf-8"))
+        self.assertIn("hidden_cards = []", config.read_text(encoding="utf-8"))
+
+    def test_pin_hide_and_show_category(self):
+        """Trends pins and hides whole categories, apart from the Overview."""
+        config = Path(os.environ[CONFIG_ENV])
+        app = AppTest.from_file(str(APP), default_timeout=30).run()
+        app.switch_page("app_pages/trends.py").run()
+
+        self.menu(app, "category-menu-sleep").click("Hide Sleep").run()
+        self.assertNotIn("Sleep", app.pills(key="trend_category").options)
+        self.assertIn('hidden_categories = ["sleep"]', config.read_text("utf-8"))
+
+        options = app.pills(key="trend_category").options
+        self.assertNotEqual(options[0], "Mood")
+        app.pills(key="trend_category").set_value("mood").run()
+        self.menu(app, "category-menu-mood").click("Pin Mood to the front").run()
+        self.assertEqual(app.pills(key="trend_category").options[0], "Mood")
+
+        app.switch_page("app_pages/overview.py").run()
+        self.assertIn("Time asleep", [metric.label for metric in app.metric])
+        app.switch_page("app_pages/trends.py").run()
+        app.button(key="unhide-hidden_categories-sleep").click().run()
+        self.assertIn("Sleep", app.pills(key="trend_category").options)
 
 
 if __name__ == "__main__":

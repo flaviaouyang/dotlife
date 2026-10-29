@@ -178,11 +178,15 @@ def config_path() -> Path:
     return Path(os.environ.get(CONFIG_ENV, "config.toml"))
 
 
-def layout() -> Layout:
-    """Read the pinned and hidden cards from the repo's config.toml.
+def layout(kind: str) -> Layout:
+    """Read one page's pins and hides from the repo's config.toml.
 
     They always live in the repo's own config, even while the sample is shown,
     so pinning or hiding never edits the sample.
+
+    Args:
+        kind: ``cards`` for the Overview or ``categories`` for Trends, read from
+            ``pinned_<kind>`` and ``hidden_<kind>`` in ``[dashboard]``.
 
     Returns:
         The layout; empty when config.toml can't be read.
@@ -193,17 +197,19 @@ def layout() -> Layout:
     except (FileNotFoundError, tomllib.TOMLDecodeError):
         return Layout()
     return Layout(
-        tuple(dashboard.get("pinned", [])), tuple(dashboard.get("hidden", []))
+        tuple(dashboard.get(f"pinned_{kind}", [])),
+        tuple(dashboard.get(f"hidden_{kind}", [])),
     )
 
 
 def set_listed(name: str, key: str, listed: bool) -> None:
-    """Add a card or category to, or remove it from, ``pinned`` or ``hidden``.
+    """Add a key to, or remove it from, one of the pin and hide lists.
 
     The rest of config.toml, comments included, is kept as it is.
 
     Args:
-        name: ``pinned`` or ``hidden``.
+        name: The list in ``[dashboard]``: ``pinned_cards``, ``hidden_cards``,
+            ``pinned_categories`` or ``hidden_categories``.
         key: A card key such as ``activity.steps``, or a category name.
         listed: True to add it, False to remove it.
     """
