@@ -10,7 +10,7 @@ The project is early, so most of these don't exist yet. All project code lives i
 
 - `FORMAT.md`: the data format spec. Its per-category tables are generated from `dotlife/categories.py` by `make docs`, so change the specs, not the tables. A test fails when the file is out of date.
 - `config.toml`: every number and threshold. Code reads it and never hard-codes a value.
-- `sample/`: the demo data, half a year of Sherlock Holmes, with its own `config.toml`. Every value is made up, and the files are generated, so don't edit them by hand. A test checks that it validates with no errors and only its planted warnings.
+- `sample/`: the demo data, half a year of Alice (of Alice and Bob), with its own `config.toml`. Every value is made up, and the files are generated, so don't edit them by hand. A test checks that it validates with no errors and only its planted warnings.
 - `dotlife/`: the package. Run it with `uv run dotlife <command>`, or `python3 -m dotlife <command>` without installing.
   - `schema.py`: the building blocks: `Field`, `Metric`, `Category` and `Context` (frozen dataclasses) and row parsing.
   - `rules.py`: plug-ins for special behaviour, such as the wake-date check and the watch-off filter. Categories take them as functions, not subclasses.
@@ -39,11 +39,13 @@ The project is early, so most of these don't exist yet. All project code lives i
 
 - Python 3.11+. Everything in `dotlife/` except `dashboard/` uses only the standard library. The dashboard's dependencies are managed with uv in `pyproject.toml` (`uv add <pkg>`).
 - `make install` sets up the environment. `make` lists the other commands.
-- `make check` runs what CI runs (lint, formatting and pyright type checks) without changing files. GitHub Actions also runs `make test` on Python 3.11 to 3.14 (`.github/workflows/ci.yml`).
+- `make check` runs what CI runs (lint, formatting and pyright type checks) without changing files. GitHub Actions also runs `make test` on Python 3.11 to 3.14, on Ubuntu (`.github/workflows/ci.yml`).
 - `make format` runs ruff and pymarkdown. Ruff enforces the docstring and import rules (see `pyproject.toml`). Write Markdown with blank lines around headings and lists, one paragraph per line.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Keep them small, with formatting changes in their own commit.
 
 ## Releases
+
+Cut a release at the end of every milestone in the roadmap, so each one is something people can download.
 
 Versions follow [Semantic Versioning](https://semver.org) and are worked out from commit messages by [git-cliff](https://git-cliff.org) (config in `cliff.toml`):
 
