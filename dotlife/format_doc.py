@@ -155,9 +155,17 @@ def category_section(category: Category) -> str:
         for metric in category.metrics
         if metric.related
     ]
+    definitions = [
+        f"`{metric.column}`: {metric.definition}"
+        for metric in category.metrics
+        if metric.definition
+    ]
     rules = [
-        summary_line(check) for check in (*category.checks, *category.warnings)
-    ] + related
+        *definitions,
+        *(summary_line(check) for check in (*category.checks, *category.warnings)),
+        *related,
+        *category.notes,
+    ]
     if category.day_filter is not None:
         rules.append(summary_line(category.day_filter))
     if rules:

@@ -1,9 +1,9 @@
-date,label
-2026-03-09,Joined the applied cryptography team
-2026-04-13,Flu; Bob brought soup
-2026-05-18,Week-long production incident
-2026-06-01,"Two weeks with a glucose sensor, out of curiosity"
-2026-06-10,Bob moved in
-2026-06-17,Shipped the new protocol; celebration dinner
-2026-06-20,Charity walk along the Thames Path
-2026-08-03,A week in Las Vegas for a security conference
+date,label,source
+2026-03-09,Joined the applied cryptography team,manual
+2026-04-13,Flu; Bob brought soup,manual
+2026-05-18,Week-long production incident,manual
+2026-06-01,"Two weeks with a glucose sensor, out of curiosity",manual
+2026-06-10,Bob moved in,manual
+2026-06-17,Shipped the new protocol; celebration dinner,manual
+2026-06-20,Charity walk along the Thames Path,manual
+2026-08-03,A week in Las Vegas for a security conference,manual

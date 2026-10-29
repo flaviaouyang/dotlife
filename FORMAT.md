@@ -30,6 +30,7 @@ Format version 1, set as `format_version` in `config.toml`. This file is the sou
 - Dates are local to the time zone in `config.toml`.
 - Weeks run Monday to Sunday, and months are calendar months. The dashboard summarises every category over the same period, chosen in `config.toml` or in the dashboard.
 - **A night's sleep counts toward the date you woke up**, and a workout toward the date it started.
+- **A source's own day.** Some sources total a day that doesn't run from midnight to midnight, such as Oura's activity day from 4 a.m. or a WHOOP cycle from one sleep to the next. Don't split these totals: file each under the date the source gives it, or, for a sleep-to-sleep day, the date you woke up at its start.
 - Clock times are averaged as minutes after 18:00, so a bedtime of 00:30 averages with 23:30 to 00:00, not to noon.
 - The current week or month is partial. It is compared to date, never projected forward.
 
@@ -102,6 +103,8 @@ Config section `[activity]`. `activity.csv`, one row per day, unique: `date`, ex
 | `distance_m` | number | m | no | at least 0 | 0 to 100,000 | total | higher |
 | `floors` | number | floors | no | at least 0 | 0 to 500 | average | higher |
 
+- `active_min`: The source's own measure of active or exercise time, as it reports it (e.g. Apple's exercise minutes). `sources.md` names the measure.
+- `energy_kcal`: Total energy burned in the day: active plus resting.
 - Days the watch wasn't worn (few steps, little sedentary time) skip averages.
 
 ### Workouts
@@ -119,6 +122,7 @@ Config section `[workouts]`. `workouts.csv`, one row per session, unique: `start
 | `distance_m` | number | m | no | at least 0 | 0 to 300,000 | total | higher |
 | `energy_kcal` | number | kcal | no | at least 0 | 0 to 5,000 | total |  |
 
+- `energy_kcal`: Energy burned during the session, as the source reports it.
 - A session must end after it starts.
 - A session is filed under the local date it started.
 
@@ -152,6 +156,8 @@ Config section `[heart]`. `heart.csv`, one row per day, unique: `date`, expected
 | `resting_hr_bpm` | number | bpm | no | at least 0 | 30 to 120 | average | lower |
 | `hrv_ms` | number | ms | no | at least 0 | 5 to 250 | average | higher |
 
+- `hrv_ms`: RMSSD. Use SDNN only when the source has no RMSSD, and a value whose method the source doesn't name only when it has neither; say which in `sources.md`.
+
 ### Body
 
 Config section `[body]`. `body.csv`, one row per day, unique: `date`.
@@ -163,6 +169,7 @@ Config section `[body]`. `body.csv`, one row per day, unique: `date`.
 | `weight_kg` | number | kg | no | at least 0 | 25 to 300 | average |  |
 | `body_fat_pct` | number | % | no | 0 to 100 | 3 to 60 | average |  |
 | `waist_cm` | number | cm | no | at least 0 | 40 to 200 | average |  |
+| `height_cm` | number | cm | no | at least 0 | 50 to 250 | average |  |
 
 ### Fitness markers
 
@@ -174,6 +181,7 @@ Config section `[fitness_markers]`. `fitness_markers.csv`, one row per day, uniq
 | `source` | text | | yes | | | | |
 | `vo2max_ml_kg_min` | number | ml/kg/min | no | at least 0 | 10 to 90 | latest | higher |
 
+- `vo2max_ml_kg_min`: Only estimates based on the person's own workouts. Skip a starting value a source fills in from age, sex or weight.
 - `vo2max_ml_kg_min` is flagged as stuck if it stays flat while `heart.resting_hr_bpm` or `activity.active_min` moves.
 
 ### Vitals
@@ -188,7 +196,11 @@ Config section `[vitals]`. `vitals.csv`, one row per day, unique: `date`.
 | `diastolic_mmhg` | number | mmHg | no | at least 0 | 40 to 140 | average |  |
 | `spo2_pct` | number | % | no | 0 to 100 | 80 to 100 | average |  |
 | `respiratory_rate_brpm` | number | breaths/min | no | at least 0 | 6 to 40 | average |  |
+| `skin_temp_c` | number | °C | no | at least 0 | 30 to 40 | average |  |
 | `skin_temp_delta_c` | number | °C | no |  | -3 to 3 | average |  |
+
+- `skin_temp_c`: Skin or wrist temperature as measured, e.g. overnight.
+- `skin_temp_delta_c`: Change from the source's own baseline. Don't work out a baseline yourself; leave it empty when the source gives none.
 
 ### Nutrition
 
@@ -249,6 +261,8 @@ Config section `[symptoms]`. `symptoms.csv`, one row per day, unique: `date`, `s
 | `source` | text | | yes | | | | |
 | `severity` | number | 0-10 | no | 0 to 10 |  | average | lower |
 
+- `severity`: 0 (none) to 10 (worst). Leave it empty when the source records only that the symptom was present. For a source with named levels, `sources.md` records the number each level gets.
+
 ### Blood glucose
 
 Config section `[glucose]`. `glucose.csv`, one row per day, unique: `date`, sensitive.
@@ -259,6 +273,8 @@ Config section `[glucose]`. `glucose.csv`, one row per day, unique: `date`, sens
 | `source` | text | | yes | | | | |
 | `glucose_mean_mmol_l` | number | mmol/L | no | at least 0 | 2 to 25 | average |  |
 | `time_in_range_pct` | number | % | no | 0 to 100 |  | average |  |
+
+- `time_in_range_pct`: Share of the day's continuous glucose monitor (CGM) readings from 3.9 to 10.0 mmol/L (70 to 180 mg/dL), the [international consensus](https://doi.org/10.2337/dci19-0028) range. Leave it empty without a CGM: a few finger-prick readings don't make a share of the day.
 
 ### Mood
 
@@ -291,6 +307,9 @@ Config section `[time]`. `time.csv`, one row per day, unique: `date`, `category`
 | `category` | text | | yes | | | | |
 | `source` | text | | yes | | | | |
 | `hours` | number | h | no | 0 to 24 |  | total |  |
+
+- Overlapping time in one category counts once. Time in two categories at once goes to the one `sources.md` ranks first, so a day never adds up to more than 24 hours.
+- Time from a calendar is time as scheduled. A day with no row has no tracked time; don't write `0`.
 
 ### Screen time
 
@@ -384,6 +403,7 @@ Config section `[events]`. `events.csv`, one row per event.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `date` | date | | yes | | | | |
 | `label` | text | | yes | | | | |
+| `source` | text | | yes | | | | |
 
 ### Weather
 
@@ -406,6 +426,8 @@ Config section `[social]`. `social.csv`, one row per day, unique: `date`, sensit
 | `date` | date | | yes | | | | |
 | `source` | text | | yes | | | | |
 | `social_h` | number | h | no | 0 to 24 |  | total |  |
+
+- `social_h`: Time spent with other people. It can overlap `time.csv`; the two are never added together.
 
 ### Travel
 

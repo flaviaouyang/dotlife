@@ -82,6 +82,8 @@ class Metric:
         plausible: Default (low, high) bounds for warnings, or None.
         related: Metrics, as ``category.column``, that usually move with this one.
             If they change while this one stays flat, it is flagged as stuck.
+        definition: What exactly the column holds, when its name and unit don't
+            say it all; empty otherwise.
     """
 
     column: str
@@ -93,6 +95,7 @@ class Metric:
     maximum: float | None = None
     plausible: tuple[float, float] | None = None
     related: tuple[str, ...] = ()
+    definition: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +140,7 @@ class Category:
         warnings: Like ``checks``, but what they find is a warning, not an error.
         day_filter: Decides which days count toward averages, e.g. leaving out
             watch-off days.
+        notes: Rules about the category's rows that no check enforces.
     """
 
     name: str
@@ -151,6 +155,7 @@ class Category:
     checks: tuple[Check, ...] = ()
     warnings: tuple[Check, ...] = ()
     day_filter: DayFilter | None = None
+    notes: tuple[str, ...] = ()
 
     @property
     def columns(self) -> tuple[str, ...]:

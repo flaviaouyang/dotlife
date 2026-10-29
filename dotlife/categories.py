@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from dotlife.rules import (
     currency_is_home,
     date_is_start_date,
@@ -146,6 +148,19 @@ def percent(
     return bounded(column, label, "%", (0, 100), plausible=plausible)
 
 
+def defined(metric: Metric, definition: str) -> Metric:
+    """Add what exactly a metric's column holds.
+
+    Args:
+        metric: The metric.
+        definition: One or two sentences for FORMAT.md.
+
+    Returns:
+        The metric with its definition.
+    """
+    return replace(metric, definition=definition)
+
+
 def daily(
     name: str,
     label: str,
@@ -153,6 +168,7 @@ def daily(
     item: Field | None = None,
     sensitive: bool = False,
     expect_every_day: bool = False,
+    notes: tuple[str, ...] = (),
 ) -> Category:
     """Build a category with one row per day, or per day and item.
 
@@ -163,6 +179,7 @@ def daily(
         item: A text column that, with the date, identifies a row (e.g. a habit).
         sensitive: Whether it is hidden until "Show sensitive" is on.
         expect_every_day: Whether a day without a row is a gap worth reporting.
+        notes: Rules about its rows that no check enforces.
 
     Returns:
         The category, stored in ``<name>.csv``.
@@ -178,6 +195,7 @@ def daily(
         key=("date", *(field.name for field in items)),
         sensitive=sensitive,
         expect_every_day=expect_every_day,
+        notes=notes,
     )
 
 
@@ -189,11 +207,18 @@ ACTIVITY = Category(
     fields=(DATE, SOURCE),
     metrics=(
         measured("steps", "Steps", "steps", (0, 60_000), higher_is_better=True),
-        minutes("active_min", "Active time", True),
+        defined(
+            minutes("active_min", "Active time", True),
+            "The source's own measure of active or exercise time, as it reports it "
+            "(e.g. Apple's exercise minutes). `sources.md` names the measure.",
+        ),
         bounded(
             "sedentary_min", "Sedentary time", "min", (0, MINUTES_PER_DAY), MEAN, False
         ),
-        measured("energy_kcal", "Energy burned", "kcal", (0, 8_000)),
+        defined(
+            measured("energy_kcal", "Energy burned", "kcal", (0, 8_000)),
+            "Total energy burned in the day: active plus resting.",
+        ),
         measured("distance_m", "Distance", "m", (0, 100_000), SUM, True),
         measured("floors", "Floors", "floors", (0, 500), MEAN, True),
     ),
@@ -210,7 +235,10 @@ WORKOUTS = Category(
     metrics=(
         measured("avg_hr_bpm", "Average heart rate", "bpm", (40, 220)),
         measured("distance_m", "Distance", "m", (0, 300_000), SUM, True),
-        measured("energy_kcal", "Energy burned", "kcal", (0, 5_000), SUM),
+        defined(
+            measured("energy_kcal", "Energy burned", "kcal", (0, 5_000), SUM),
+            "Energy burned during the session, as the source reports it.",
+        ),
     ),
     key=("start",),
     checks=(end_after_start, date_is_start_date),
@@ -242,7 +270,12 @@ HEART = daily(
     "Heart",
     (
         measured("resting_hr_bpm", "Resting heart rate", "bpm", (30, 120), MEAN, False),
-        measured("hrv_ms", "Heart rate variability", "ms", (5, 250), MEAN, True),
+        defined(
+            measured("hrv_ms", "Heart rate variability", "ms", (5, 250), MEAN, True),
+            "RMSSD. Use SDNN only when the source has no RMSSD, and a value whose "
+            "method the source doesn't name only when it has neither; say which in "
+            "`sources.md`.",
+        ),
     ),
     expect_every_day=True,
 )
@@ -254,6 +287,7 @@ BODY = daily(
         measured("weight_kg", "Weight", "kg", (25, 300)),
         percent("body_fat_pct", "Body fat", (3, 60)),
         measured("waist_cm", "Waist", "cm", (40, 200)),
+        measured("height_cm", "Height", "cm", (50, 250)),
     ),
 )
 
@@ -261,14 +295,18 @@ FITNESS_MARKERS = daily(
     "fitness_markers",
     "Fitness markers",
     (
-        measured(
-            "vo2max_ml_kg_min",
-            "VO2 max",
-            "ml/kg/min",
-            (10, 90),
-            LAST,
-            True,
-            related=("heart.resting_hr_bpm", "activity.active_min"),
+        defined(
+            measured(
+                "vo2max_ml_kg_min",
+                "VO2 max",
+                "ml/kg/min",
+                (10, 90),
+                LAST,
+                True,
+                related=("heart.resting_hr_bpm", "activity.active_min"),
+            ),
+            "Only estimates based on the person's own workouts. Skip a starting "
+            "value a source fills in from age, sex or weight.",
         ),
     ),
 )
@@ -281,8 +319,20 @@ VITALS = daily(
         measured("diastolic_mmhg", "Diastolic blood pressure", "mmHg", (40, 140)),
         percent("spo2_pct", "Blood oxygen", (80, 100)),
         measured("respiratory_rate_brpm", "Respiratory rate", "breaths/min", (6, 40)),
-        measured(
-            "skin_temp_delta_c", "Skin temperature change", "°C", (-3, 3), minimum=None
+        defined(
+            measured("skin_temp_c", "Skin temperature", "°C", (30, 40)),
+            "Skin or wrist temperature as measured, e.g. overnight.",
+        ),
+        defined(
+            measured(
+                "skin_temp_delta_c",
+                "Skin temperature change",
+                "°C",
+                (-3, 3),
+                minimum=None,
+            ),
+            "Change from the source's own baseline. Don't work out a baseline "
+            "yourself; leave it empty when the source gives none.",
         ),
     ),
 )
@@ -326,7 +376,14 @@ MEDICATION = daily(
 SYMPTOMS = daily(
     "symptoms",
     "Symptoms",
-    (bounded("severity", "Severity", "0-10", (0, 10), MEAN, False),),
+    (
+        defined(
+            bounded("severity", "Severity", "0-10", (0, 10), MEAN, False),
+            "0 (none) to 10 (worst). Leave it empty when the source records only "
+            "that the symptom was present. For a source with named levels, "
+            "`sources.md` records the number each level gets.",
+        ),
+    ),
     item=text("symptom"),
     sensitive=True,
 )
@@ -336,7 +393,14 @@ GLUCOSE = daily(
     "Blood glucose",
     (
         measured("glucose_mean_mmol_l", "Mean glucose", "mmol/L", (2, 25)),
-        percent("time_in_range_pct", "Time in range"),
+        defined(
+            percent("time_in_range_pct", "Time in range"),
+            "Share of the day's continuous glucose monitor (CGM) readings from 3.9 "
+            "to 10.0 mmol/L (70 to 180 mg/dL), the "
+            "[international consensus](https://doi.org/10.2337/dci19-0028) range. "
+            "Leave it empty without a CGM: a few finger-prick readings don't make a "
+            "share of the day.",
+        ),
     ),
     sensitive=True,
 )
@@ -362,7 +426,19 @@ REFLECTIONS = Category(
     sensitive=True,
 )
 
-TIME = daily("time", "Time use", (hours("hours", "Hours"),), item=text("category"))
+TIME = daily(
+    "time",
+    "Time use",
+    (hours("hours", "Hours"),),
+    item=text("category"),
+    notes=(
+        "Overlapping time in one category counts once. Time in two categories at "
+        "once goes to the one `sources.md` ranks first, so a day never adds up to "
+        "more than 24 hours.",
+        "Time from a calendar is time as scheduled. A day with no row has no "
+        "tracked time; don't write `0`.",
+    ),
+)
 
 SCREEN_TIME = daily(
     "screen_time",
@@ -441,7 +517,7 @@ EVENTS = Category(
     label="Life events",
     file="events.csv",
     grain=Grain.EVENT,
-    fields=(DATE, text("label")),
+    fields=(DATE, text("label"), SOURCE),
     metrics=(),
     key=(),
 )
@@ -458,7 +534,16 @@ WEATHER = daily(
 )
 
 SOCIAL = daily(
-    "social", "Social", (hours("social_h", "Time with people"),), sensitive=True
+    "social",
+    "Social",
+    (
+        defined(
+            hours("social_h", "Time with people"),
+            "Time spent with other people. It can overlap `time.csv`; the two are "
+            "never added together.",
+        ),
+    ),
+    sensitive=True,
 )
 
 TRAVEL = Category(
