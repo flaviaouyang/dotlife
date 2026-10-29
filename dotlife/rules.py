@@ -90,7 +90,8 @@ def watch_worn(row: Row, context: Context) -> bool:
     """Days the watch wasn't worn (few steps, little sedentary time) skip averages.
 
     A day with no steps recorded, or with few steps and little sedentary time, counts
-    as not worn. Missing sedentary time counts as none.
+    as not worn. Both are needed: few steps with no sedentary time recorded counts as
+    worn.
 
     Args:
         row: A parsed activity row with ``steps`` and ``sedentary_min``.
@@ -99,10 +100,11 @@ def watch_worn(row: Row, context: Context) -> bool:
     Returns:
         True if the day counts toward averages.
     """
-    steps = row["steps"]
+    steps, sedentary = row["steps"], row["sedentary_min"]
     if steps is None:
         return False
     return (
         steps >= context.options["watch_off_steps"]
-        or (row["sedentary_min"] or 0) >= context.options["watch_off_sedentary_min"]
+        or sedentary is None
+        or sedentary >= context.options["watch_off_sedentary_min"]
     )

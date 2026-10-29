@@ -88,13 +88,13 @@ class WatchWornTest(unittest.TestCase):
     """Days with few steps and little sedentary time count as watch off."""
 
     def test_cases(self):
-        """Enough steps or sedentary time means worn; no step data never does."""
+        """Enough steps, enough or no sedentary time means worn; no steps never is."""
         cases = [
             (5000, 600, True),
             (300, 600, True),
             (1000, 0, True),
             (300, 100, False),
-            (300, None, False),
+            (300, None, True),
             (None, 900, False),
         ]
         for steps, sedentary, worn in cases:
