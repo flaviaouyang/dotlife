@@ -11,7 +11,7 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 - `sources.md`: their setup, i.e. which source provides each category, the priority when two sources overlap, and how each is synced (a script or a connector). `setup-sources` writes it, and `sync` follows it.
 - `data/`: their data files, in the format. `sync` writes them.
 - `scripts/`: their own import scripts, written by `setup-sources` for sources that can be scripted.
-- `sample/`: made-up demo data. The dashboard falls back to it when `data/` doesn't exist. Never write their data here.
+- `sample/`: made-up demo data (Sherlock Holmes). The dashboard falls back to it when `data/` doesn't exist. Never write the person's data here. `setup-sources` deletes it at the end of setup.
 - `docs/sources/`: one guide per data source: how to get the data out and how it maps to the format.
 - `dotlife/`: dotlife's own code. Leave it alone during setup and sync (see the last section).
 

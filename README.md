@@ -84,14 +84,13 @@ Anything else that is one number per day can be added as a custom metric in `con
 
 ## Quick start
 
-> [!NOTE]
-> Planned commands. They don't exist yet.
-
 ```sh
 make install     # or: uv sync
-make validate    # or: uv run dotlife validate sample/
-make dashboard   # or: uv run dotlife dashboard
+make validate    # or: uv run dotlife validate
+make dashboard   # coming soon
 ```
+
+Until you add your own `data/` folder, both read the sample data: half a year in the life of Sherlock Holmes, of 221B Baker Street, in 2026. It covers every category, with a few gaps and odd values planted so every rule shows up. Every value is made up. Setting up your own sources removes it.
 
 To use your own data, create a private repo from this template. Then follow the guides in `docs/sources/`, or let your coding agent run the `setup-sources` skill.
 

@@ -1,0 +1,23 @@
+# Holmes's settings. dotlife uses this file, not the one in the repo root,
+# whenever it reads this folder.
+
+format_version = 1
+timezone = "Europe/London"
+
+[activity]
+watch_off_steps = 1000
+watch_off_sedentary_min = 480
+
+[fitness_markers]
+stale_after_days = { vo2max_ml_kg_min = 90 }
+
+[finances]
+home_currency = "GBP"
+budgets = { "chemistry supplies" = 150, cabs = 120, restaurants = 80 }
+
+[custom.experiments]
+label = "Chemistry experiments"
+unit = "experiments"
+summary = "sum"
+minimum = 0
+plausible = [0, 10]

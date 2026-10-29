@@ -1,0 +1,26 @@
+date,symptom,source,severity
+2026-03-08,headache,manual,4
+2026-03-11,headache,manual,5
+2026-03-18,headache,manual,3
+2026-03-26,headache,manual,5
+2026-03-28,headache,manual,4
+2026-04-13,sore throat,manual,4
+2026-04-13,fatigue,manual,6
+2026-04-14,sore throat,manual,6
+2026-04-14,fatigue,manual,5
+2026-04-15,sore throat,manual,6
+2026-04-15,fatigue,manual,6
+2026-04-16,sore throat,manual,5
+2026-04-16,fatigue,manual,5
+2026-04-17,sore throat,manual,3
+2026-04-17,fatigue,manual,7
+2026-04-20,headache,manual,3
+2026-04-22,headache,manual,5
+2026-04-27,headache,manual,2
+2026-05-24,headache,manual,5
+2026-06-12,headache,manual,5
+2026-06-15,headache,manual,4
+2026-07-19,headache,manual,2
+2026-07-20,headache,manual,3
+2026-08-04,headache,manual,5
+2026-08-07,headache,manual,2
