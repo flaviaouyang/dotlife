@@ -23,7 +23,6 @@ body = """
 {% endfor %}
 """
 render_always = true
-output = "CHANGELOG.md"
 
 [git]
 conventional_commits = true

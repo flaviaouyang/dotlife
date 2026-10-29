@@ -33,6 +33,6 @@ docs: ## Regenerate the category tables in FORMAT.md
 release: ## Bump the version and update CHANGELOG.md (override: BUMP=major|minor|patch or VERSION=vX.Y.Z[-beta.N])
 	@version=$(or $(VERSION),$$(uv run git-cliff --bumped-version $(if $(BUMP),--bump $(BUMP)))) && \
 	uv version --no-sync "$${version#v}" && \
-	uv run git-cliff --tag "$$version" && \
+	uv run git-cliff --tag "$$version" --output CHANGELOG.md && \
 	echo "Review the changes, then commit and push. Once CI passes, GitHub Actions tags $$version and publishes the release:" && \
 	echo "  git add CHANGELOG.md pyproject.toml uv.lock && git commit -m 'chore(release): $$version' && git push"
