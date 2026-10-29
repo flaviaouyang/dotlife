@@ -589,3 +589,38 @@ CATEGORIES = (
     SOCIAL,
     TRAVEL,
 )
+
+AREAS = (
+    "Body and health",
+    "Mind",
+    "Time and work",
+    "Habits and leisure",
+    "Money",
+    "Context",
+    "Your metrics",
+)
+AREA_OF = {
+    **dict.fromkeys(
+        (
+            "activity",
+            "workouts",
+            "sleep",
+            "heart",
+            "body",
+            "fitness_markers",
+            "vitals",
+            "nutrition",
+            "mindfulness",
+            "cycle",
+            "medication",
+            "symptoms",
+            "glucose",
+        ),
+        "Body and health",
+    ),
+    **dict.fromkeys(("mood", "reflections"), "Mind"),
+    **dict.fromkeys(("time", "screen_time", "tasks"), "Time and work"),
+    **dict.fromkeys(("habits", "reading", "learning", "media"), "Habits and leisure"),
+    "finances": "Money",
+    **dict.fromkeys(("events", "weather", "social", "travel"), "Context"),
+}

@@ -4,10 +4,9 @@ from datetime import date, timedelta
 from enum import StrEnum
 from typing import Any, cast
 
+from dotlife.categories import AREA_OF, AREAS
 from dotlife.config import Goal, goal_for
 from dotlife.dashboard.display import (
-    AREA_OF,
-    AREAS,
     CLOCK,
     SCALE_UNITS,
     TONE_COLORS,

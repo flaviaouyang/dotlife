@@ -1,8 +1,8 @@
 import streamlit as st
 
+from dotlife.categories import AREAS
 from dotlife.dashboard.cards import build_overview, card_labels, usual_periods
 from dotlife.dashboard.data import dataset, layout, period_title, selection
-from dotlife.dashboard.display import AREAS
 from dotlife.dashboard.widgets import CARD_STYLE, show_grid, show_hidden
 
 data = dataset()
