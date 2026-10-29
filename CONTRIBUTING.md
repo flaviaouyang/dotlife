@@ -18,6 +18,9 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `config.py`: reads `config.toml` and gives each category its settings, including overrides of plausible bounds and related metrics.
   - `format_doc.py`: generates the category tables in `FORMAT.md`.
   - `periods.py`: weeks, months and clock-time maths.
+  - `journal.py`: reads `journal/` into entries with their `#tags`.
+  - `load.py`: reads a data folder once into a `Dataset` (rows by category, settings, journal).
+  - `summaries.py`: the calculations the dashboard shows: daily and period values, clock times, the usual range, assessments, notable metrics, the stuck flag and display units. Standard library only, so other tools (like a future weekly-review skill) can reuse them.
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
   - `cli.py` and `__main__.py`: the `dotlife` command.
   - `sources/`: the importers.
