@@ -39,6 +39,16 @@ The project is early, so most of these don't exist yet. All project code lives i
 - `make format` runs ruff and pymarkdown. Ruff enforces the docstring and import rules (see `pyproject.toml`). Write Markdown with blank lines around headings and lists, one paragraph per line.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Keep them small, with formatting changes in their own commit.
 
+## Releases
+
+Versions follow [Semantic Versioning](https://semver.org) and are worked out from commit messages by [git-cliff](https://git-cliff.org) (config in `cliff.toml`):
+
+- dotlife is in alpha. While the latest tag is a pre-release (`v0.1.0-alpha.1`), each release bumps the pre-release number. Moving to beta or to a stable version is chosen by hand.
+- After that, before 1.0, `feat` commits and breaking changes bump the minor version, and everything else bumps the patch version. Version 1.0.0 is chosen by hand.
+- `make release` sets the version in `pyproject.toml` (in Python's format, e.g. `0.1.0a1`) and rewrites `CHANGELOG.md`. Override it with `BUMP=major|minor|patch`, or with an exact `VERSION=v0.1.0-beta.1`.
+- It doesn't commit or tag. Review the changes, then run the commands it prints: a `chore(release): vX.Y.Z` commit and a `vX.Y.Z` tag.
+- `style` and `chore(release)` commits are left out of the changelog. Commits that don't follow Conventional Commits are left out too.
+
 ## Python style
 
 ### Data and structure
