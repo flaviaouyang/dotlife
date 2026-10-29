@@ -523,25 +523,50 @@ def plural(count: int, noun: str, plural_noun: str | None = None) -> str:
     return f"{count} {plural_noun or noun + 's'}"
 
 
-def problem_line(problem: Problem) -> str:
-    """Render one problem as an indented line, with its location if it has one.
+def location(lines: list[int], column: str | None) -> str:
+    """Describe where a problem is: its lines, up to three, and its column.
 
     Args:
-        problem: The problem.
+        lines: Line numbers the same problem appears on; may be empty.
+        column: The column, if the problem is in one.
+
+    Returns:
+        E.g. ``line 14, steps: ``, ``lines 81, 82, 83 and 5 more: `` or empty.
+
+    Example:
+        >>> location([81, 82, 83, 84], None)
+        'lines 81, 82, 83 and 1 more: '
+    """
+    shown = ", ".join(str(line) for line in lines[:3])
+    more = f" and {len(lines) - 3} more" if len(lines) > 3 else ""
+    where = [f"line{'s' if len(lines) > 1 else ''} {shown}{more}"] if lines else []
+    where += [column] if column is not None else []
+    return f"{', '.join(where)}: " if where else ""
+
+
+def problem_lines(problems: list[Problem]) -> list[str]:
+    """Render problems as indented lines, one per distinct problem.
+
+    The same message in the same column on several rows becomes one line that
+    lists the rows.
+
+    Args:
+        problems: Problems in file order.
 
     Returns:
         E.g. ``  error    line 14, steps: -5 is below the minimum 0``.
     """
-    where = ", ".join(
-        part
-        for part in (
-            None if problem.line is None else f"line {problem.line}",
-            problem.column,
+    groups: dict[tuple[Severity, str | None, str], list[int]] = {}
+    for problem in problems:
+        lines = groups.setdefault(
+            (problem.severity, problem.column, problem.message), []
         )
-        if part is not None
-    )
-    prefix = f"{where}: " if where else ""
-    return f"  {problem.severity:<8} {prefix}{problem.message}"
+        if problem.line is not None:
+            lines.append(problem.line)
+    return [
+        f"  {severity:<8} {location(lines, column)}{message}"
+        for (severity, column, message), lines in groups.items()
+    ]
 
 
 def file_lines(report: FileReport) -> list[str]:
@@ -561,9 +586,10 @@ def file_lines(report: FileReport) -> list[str]:
     nouns = f"{report.noun[:-1]}ies" if report.noun.endswith("y") else None
     count = plural(report.rows, report.noun, nouns)
     lines = [f"{Path(report.path).name}: {count}{span}"]
-    lines += [problem_line(problem) for problem in report.problems]
+    lines += problem_lines(report.problems)
     lines += [
-        f"  gap      {start} to {end} ({plural((end - start).days + 1, 'day')} missing)"
+        f"  gap      {start}{'' if start == end else f' to {end}'} "
+        f"({plural((end - start).days + 1, 'day')} missing)"
         for start, end in report.gaps
     ]
     if report.days_skipped:
@@ -584,7 +610,7 @@ def format_text(report: Report) -> str:
     """
     as_of = "" if report.as_of is None else f" (data up to {report.as_of})"
     lines = [f"Validated {report.data_dir}{as_of}"]
-    lines += [problem_line(problem) for problem in report.problems]
+    lines += problem_lines(report.problems)
     for file_report in report.files:
         lines += ["", *file_lines(file_report)]
     if report.missing:
