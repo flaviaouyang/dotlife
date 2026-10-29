@@ -47,7 +47,7 @@ To use your own data, create your own (private) repo from this template and foll
 
 ## Contributing
 
-Not yet. Once the format is stable, the most useful contributions will be guides for new data sources.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Once the format is stable, the most useful contributions will be guides for new data sources.
 
 ## License
 
