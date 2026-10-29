@@ -7,7 +7,12 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
 
-from dotlife.config import all_categories, context_for, plausible_range
+from dotlife.config import (
+    all_categories,
+    context_for,
+    goal_problems,
+    plausible_range,
+)
 from dotlife.reflections import file_year, parse_reflections, settings
 from dotlife.schema import (
     FORMAT_VERSION,
@@ -470,6 +475,11 @@ def validate_folder(data_dir: Path, config: Mapping[str, Any]) -> Report:
     except ValueError as error:
         report.problems.append(Problem(Severity.ERROR, str(error)))
         return report
+    report.problems += [
+        Problem(Severity.ERROR, message)
+        for category in categories
+        for message in goal_problems(category, contexts[category.name])
+    ]
     for category in categories:
         context = contexts[category.name]
         path = data_path(category, data_dir)

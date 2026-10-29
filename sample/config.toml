@@ -7,6 +7,16 @@ timezone = "Europe/London"
 [activity]
 watch_off_steps = 1000
 watch_off_sedentary_min = 480
+goals = { steps = 10000, active_min = 150 }
+
+[sleep]
+goals = { asleep_min = 450 }
+
+[screen_time]
+goals = { screen_min = 180 }
+
+[body]
+goals = { weight_kg = { at_most = 72 } }
 
 [fitness_markers]
 stale_after_days = { vo2max_ml_kg_min = 90 }

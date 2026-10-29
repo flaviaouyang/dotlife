@@ -3,10 +3,12 @@ from dataclasses import dataclass, replace
 from datetime import date, timedelta
 from typing import Any, cast
 
+from dotlife.config import Goal, goal_for
 from dotlife.dashboard.display import (
     AREA_OF,
     AREAS,
     CLOCK,
+    SCALE_UNITS,
     TONE_COLORS,
     CardSpec,
     Color,
@@ -58,6 +60,7 @@ LABELS = {
     "travel.travel_day": "Travel days",
 }
 AGGREGATE_OVERRIDES = {"habits.times": Aggregate.SUM}
+UNITLESS = ("min", CLOCK, "")
 STATUS_CHIPS = {
     Status.BELOW: "Below usual",
     Status.USUAL: "Usual",
@@ -131,6 +134,7 @@ class Card:
         color: The colour of the change and sparkline: blue, orange or gray.
         usual: The usual range in words, or empty.
         note: Extra context, e.g. a breakdown or a stale warning; may be empty.
+        goal: Progress towards the metric's goal, or empty without one.
         series: Recent period values for the sparkline, oldest first.
         sensitive: Whether it is hidden until "Show sensitive" is on.
         assessment: How the value compares with the usual range, if it can.
@@ -146,6 +150,7 @@ class Card:
     color: Color
     usual: str
     note: str
+    goal: str
     series: tuple[float, ...]
     sensitive: bool
     assessment: Assessment | None
@@ -475,6 +480,94 @@ def card_note(
     return ". ".join(note for note in notes if note)
 
 
+def display_goal(spec: CardSpec, dataset: Dataset) -> Goal | None:
+    """Return a card's goal in display units, if its metric has one.
+
+    Args:
+        spec: The card.
+        dataset: The loaded data, for the goals and display settings.
+
+    Returns:
+        The goal with its target converted, or None.
+    """
+    if spec.column is None or spec.category == "reflections":
+        return None
+    category = category_named(dataset, spec.category)
+    metric = next(m for m in category.metrics if m.column == spec.column)
+    goal = goal_for(metric, dataset.contexts[spec.category])
+    if goal is None:
+        return None
+    display = dataset.source.config.get("display", {})
+    return Goal(display_value(goal.target, spec.unit, display)[0], goal.at_least)
+
+
+def period_target(goal: Goal, aggregate: Aggregate, start: date, end: date) -> float:
+    """Return a goal's target for one period.
+
+    Totals' goals are per week, so a month's target scales with its length;
+    averages and latest values keep the target as it is.
+
+    Args:
+        goal: The goal, in display units.
+        aggregate: How the metric's period value is formed.
+        start: The period's first day.
+        end: The day after the period.
+
+    Returns:
+        The target for that period.
+    """
+    if aggregate in (Aggregate.SUM, Aggregate.DAYS):
+        return goal.target * (end - start).days / 7
+    return goal.target
+
+
+def goal_text(
+    spec: CardSpec,
+    reading: Reading,
+    goal: Goal | None,
+    selection: Selection,
+    currency: str,
+) -> str:
+    """Describe progress towards a card's goal for the selected period.
+
+    Args:
+        spec: The card.
+        reading: The card's numbers.
+        goal: The goal in display units, or None.
+        selection: The chosen period.
+        currency: The home currency code, for money.
+
+    Returns:
+        E.g. "Goal 10,000 a day: reached on 5 of 7 days", or empty.
+    """
+    if goal is None:
+        return ""
+    unit = reading.unit
+
+    def amount(value: float) -> str:
+        text = format_value(value, unit, currency)
+        return text if unit in UNITLESS else f"{text} {SCALE_UNITS.get(unit, unit)}"
+
+    prefix = "Goal " if goal.at_least else "Goal at most "
+    if spec.aggregate is Aggregate.MEAN:
+        days = [
+            value
+            for day, value in reading.daily.items()
+            if selection.start <= day < selection.end
+        ]
+        reached = sum(goal.met(value) for value in days)
+        nights = "nights" if spec.category == "sleep" else "days"
+        count = f"reached on {reached} of {len(days)} {nights}"
+        return f"{prefix}{amount(goal.target)}: {count}"
+    target = period_target(goal, spec.aggregate, selection.start, selection.end)
+    per = "" if spec.aggregate is Aggregate.LAST else f" a {selection.period.value}"
+    head = f"{prefix}{amount(target)}{per}"
+    if goal.met(reading.current):
+        return f"{head}: reached"
+    gap = amount(abs(target - reading.current))
+    return f"{head}: {gap} to go" if goal.at_least else f"{head}: over by {gap}"
+
+
 def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card | None:
     """Build one card for the selected period.
 
@@ -525,6 +618,7 @@ def build_card(spec: CardSpec, dataset: Dataset, selection: Selection) -> Card |
         if usual is None
         else f"Usual {shown(usual.low)} to {shown(usual.high)}",
         note=card_note(spec, dataset, selection, reading),
+        goal=goal_text(spec, reading, display_goal(spec, dataset), selection, currency),
         series=tuple(value for value in series if value is not None),
         sensitive=category_named(dataset, spec.category).sensitive,
         assessment=reading.assessment,

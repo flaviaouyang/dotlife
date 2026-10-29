@@ -241,3 +241,96 @@ def find_data(config_path: Path, folder: Path | None = None) -> DataSource:
     own_config = chosen / "config.toml"
     config_file = own_config if own_config.is_file() else config_path
     return DataSource(chosen, load_config(config_file), is_sample)
+
+
+@dataclass(frozen=True, slots=True)
+class Goal:
+    """A target for one metric.
+
+    Attributes:
+        target: The value to reach, in the metric's stored unit. For totals it is
+            per week.
+        at_least: True to reach or pass it, False to stay at or under it.
+    """
+
+    target: float
+    at_least: bool
+
+    def met(self, value: float) -> bool:
+        """Tell whether a value meets the goal.
+
+        Args:
+            value: A value in the same unit as the target.
+
+        Returns:
+            True when it is on the right side of the target, or equal to it.
+        """
+        return value >= self.target if self.at_least else value <= self.target
+
+
+def goal_for(metric: Metric, context: Context) -> Goal | None:
+    """Read a metric's goal from ``goals`` in its category's config section.
+
+    A plain number follows the metric's better direction; ``{ at_least = n }`` or
+    ``{ at_most = n }`` sets it explicitly, which metrics with no better direction
+    (like weight) need.
+
+    Args:
+        metric: The metric.
+        context: Its category's settings.
+
+    Returns:
+        The goal, or None when there isn't one.
+
+    Raises:
+        ValueError: If the goal isn't a number or a one-key table, or a plain
+            number is given for a metric with no better direction.
+
+    Example:
+        >>> from zoneinfo import ZoneInfo
+        >>> from dotlife.categories import ACTIVITY
+        >>> context = Context(ZoneInfo("UTC"), {"goals": {"steps": 10000}})
+        >>> goal_for(ACTIVITY.metrics[0], context)
+        Goal(target=10000.0, at_least=True)
+    """
+    setting = context.options.get("goals", {}).get(metric.column)
+    where = f"config.toml: goals.{metric.column}"
+    if setting is None:
+        return None
+    if isinstance(setting, int | float) and not isinstance(setting, bool):
+        if metric.higher_is_better is None:
+            raise ValueError(f"{where}: say {{ at_least = n }} or {{ at_most = n }}")
+        return Goal(float(setting), metric.higher_is_better)
+    if isinstance(setting, dict) and len(setting) == 1:
+        ((direction, target),) = setting.items()
+        if direction in ("at_least", "at_most") and isinstance(target, int | float):
+            return Goal(float(target), direction == "at_least")
+    raise ValueError(
+        f"{where} must be a number, {{ at_least = n }} or {{ at_most = n }}; "
+        f"got {setting!r}"
+    )
+
+
+def goal_problems(category: Category, context: Context) -> list[str]:
+    """Check a category's ``goals`` table against its metrics.
+
+    Args:
+        category: The category.
+        context: Its settings.
+
+    Returns:
+        One message per mistake; empty when the goals are fine.
+    """
+    columns = {metric.column: metric for metric in category.metrics}
+    problems = [
+        f"config.toml: [{category.name}] has a goal for {name}, which isn't one of "
+        f"its metrics ({', '.join(columns) or 'none'})"
+        for name in context.options.get("goals", {})
+        if name not in columns
+    ]
+    for metric in category.metrics:
+        try:
+            goal_for(metric, context)
+        except ValueError as error:
+            problems.append(str(error))
+    return problems

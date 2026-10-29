@@ -40,6 +40,7 @@ def trend_chart(
     unit: str,
     usual: UsualRange | None,
     events: Sequence[tuple[date, str]],
+    goals: Sequence[tuple[date, float]] = (),
 ) -> alt.LayerChart:
     """Draw a metric's period values with its usual range and life events.
 
@@ -48,6 +49,7 @@ def trend_chart(
         unit: The display unit, for axis labels.
         usual: The usual range for the latest period, drawn as a band, or None.
         events: (date, label) life events inside the chart's range.
+        goals: (period start, target) pairs drawn as a dashed goal line, if any.
 
     Returns:
         A layered Altair chart.
@@ -98,6 +100,22 @@ def trend_chart(
             .encode(x="day:T", tooltip=tooltip)
         )
         layers += [rule, hover_area]
+    if goals:
+        targets = pl.DataFrame(
+            {
+                "period": [day for day, _ in goals],
+                "goal": [target for _, target in goals],
+            }
+        )
+        layers.append(
+            alt.Chart(targets)
+            .mark_line(strokeDash=[6, 4], strokeWidth=1.5, color="#16A34A")
+            .encode(
+                x="period:T",
+                y="goal:Q",
+                tooltip=[alt.Tooltip("goal:Q", title="Goal", format=",.1f")],
+            )
+        )
     return alt.LayerChart(layer=[*layers, line]).properties(height=260)
 
 

@@ -54,6 +54,8 @@ for area in AREAS:
                         part for part in (card.unit.capitalize(), card.usual) if part
                     )
                 )
+                if card.goal:
+                    st.caption(f":material/flag: {card.goal}")
                 if card.note:
                     st.caption(card.note)
 

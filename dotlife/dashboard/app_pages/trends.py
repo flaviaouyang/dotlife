@@ -3,11 +3,11 @@ from typing import cast
 
 import streamlit as st
 
-from dotlife.dashboard.cards import read, trend_specs
+from dotlife.dashboard.cards import display_goal, period_target, read, trend_specs
 from dotlife.dashboard.charts import nights_chart, trend_chart
 from dotlife.dashboard.data import dataset, period_title, selection
 from dotlife.dashboard.display import format_value, hours_minutes
-from dotlife.periods import Period
+from dotlife.periods import Period, period_end
 
 HISTORY = {
     "3 months": {Period.WEEK: 13, Period.MONTH: 3},
@@ -54,7 +54,8 @@ events = [
 
 st.caption(
     f"{chosen.period.value.title()}ly values up to {period_title(chosen).lower()}. "
-    "The band is your usual range. Dashed lines are life events: hover for details."
+    "The band is your usual range and the green dashed line your goal. Grey "
+    "dashed lines are life events: hover for details."
 )
 
 for spec in trend_specs(category):
@@ -68,6 +69,20 @@ for spec in trend_specs(category):
     )
     points = points if limit is None else points[-limit:]
     shown = [event for event in events if event[0] >= points[0][0]]
+    goal = display_goal(spec, data)
+    goals = (
+        []
+        if goal is None
+        else [
+            (
+                start,
+                period_target(
+                    goal, spec.aggregate, start, period_end(start, chosen.period)
+                ),
+            )
+            for start, _ in points
+        ]
+    )
     with st.container(border=True):
         st.subheader(spec.label)
         current = format_value(reading.current, reading.unit)
@@ -85,7 +100,7 @@ for spec in trend_specs(category):
                 "the readings are shown, but it isn't compared with its usual range."
             )
         st.altair_chart(
-            trend_chart(points, reading.unit, reading.usual, shown),
+            trend_chart(points, reading.unit, reading.usual, shown, goals),
             alt=f"{spec.label} by {chosen.period.value}, with its usual range",
         )
 

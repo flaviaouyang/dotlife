@@ -25,6 +25,8 @@ usual_range = { week = 8, month = 6 }   # full periods behind the "usual range" 
 #   plausible = { <column> = [low, high] }            change when a value is a warning
 #   stale_after_days = { <column> = days }            flag a value that stops changing
 #   related = { <column> = ["category.column"] }      metrics for the stuck flag; [] = off
+#   goals = { <column> = 10000 }                      a target, in the column's unit;
+#           { <column> = { at_most = 70 } }           totals' goals are per week
 
 [activity]
 watch_off_steps = 1000            # a day under both of these counts as "watch not worn"
