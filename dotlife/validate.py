@@ -508,11 +508,32 @@ def location(lines: list[int], column: str | None) -> str:
     return f"{', '.join(where)}: " if where else ""
 
 
-def problem_lines(problems: list[Problem]) -> list[str]:
-    """Render problems as indented lines, one per distinct problem.
+def group_problems(problems: list[Problem]) -> list[tuple[Severity, str]]:
+    """Merge problems that repeat on several rows, errors first.
 
-    The same message in the same column on several rows becomes one line that
-    lists the rows.
+    The same message in the same column becomes one entry that lists its rows.
+
+    Args:
+        problems: Problems in file order.
+
+    Returns:
+        (severity, text) pairs; the text starts with the problem's location.
+    """
+    groups: dict[tuple[Severity, str | None, str], list[int]] = {}
+    for problem in problems:
+        key = (problem.severity, problem.column, problem.message)
+        lines = groups.setdefault(key, [])
+        if problem.line is not None:
+            lines.append(problem.line)
+    merged = [
+        (severity, f"{location(lines, column)}{message}")
+        for (severity, column, message), lines in groups.items()
+    ]
+    return sorted(merged, key=lambda pair: pair[0] is not Severity.ERROR)
+
+
+def problem_lines(problems: list[Problem]) -> list[str]:
+    """Render problems as indented report lines, one per distinct problem.
 
     Args:
         problems: Problems in file order.
@@ -520,17 +541,7 @@ def problem_lines(problems: list[Problem]) -> list[str]:
     Returns:
         E.g. ``  error    line 14, steps: -5 is below the minimum 0``.
     """
-    groups: dict[tuple[Severity, str | None, str], list[int]] = {}
-    for problem in problems:
-        lines = groups.setdefault(
-            (problem.severity, problem.column, problem.message), []
-        )
-        if problem.line is not None:
-            lines.append(problem.line)
-    return [
-        f"  {severity:<8} {location(lines, column)}{message}"
-        for (severity, column, message), lines in groups.items()
-    ]
+    return [f"  {severity:<8} {text}" for severity, text in group_problems(problems)]
 
 
 def file_lines(report: FileReport) -> list[str]:
