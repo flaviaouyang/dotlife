@@ -1,0 +1,22 @@
+# dotlife settings. Every number and threshold lives here; the code holds none.
+# A category shows in the dashboard when its file exists in data_dir.
+# Set enabled = false in its section to switch it off everywhere.
+
+format_version = 1
+timezone = "Europe/Berlin"   # IANA name; weeks and wake dates use it
+data_dir = "data"            # falls back to sample/ when this folder is missing
+
+[dashboard]
+period = "week"              # "week" (Monday to Sunday) or "month"
+show_sensitive = false       # sensitive categories stay hidden until switched on in the dashboard
+
+[activity]
+enabled = true
+watch_off_steps = 1000            # a day under both of these counts as "watch not worn"
+watch_off_sedentary_min = 480
+
+[sleep]
+enabled = true
+
+[mood]
+enabled = true
