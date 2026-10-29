@@ -1,4 +1,5 @@
-# dotlife settings. Every number and threshold lives here; the code holds none.
+# dotlife settings: every threshold and personal choice lives here.
+# Hard limits that define the format (e.g. at most 1440 minutes a day) are in the code.
 # A category shows in the dashboard when its file exists in data_dir.
 # Set enabled = false in its section to switch it off everywhere.
 
@@ -14,6 +15,9 @@ show_sensitive = false       # sensitive categories stay hidden until switched o
 enabled = true
 watch_off_steps = 1000            # a day under both of these counts as "watch not worn"
 watch_off_sedentary_min = 480
+# Values outside a metric's plausible bounds are warnings. Override a bound here,
+# e.g. for ultra-marathon days:
+# plausible = { steps = [0, 150000] }
 
 [sleep]
 enabled = true

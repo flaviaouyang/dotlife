@@ -23,6 +23,9 @@ class Grain(StrEnum):
 
     DAY = "day"
     SESSION = "session"
+    TRANSACTION = "transaction"
+    EVENT = "event"
+    ENTRY = "entry"
 
 
 class Aggregate(StrEnum):
@@ -32,6 +35,7 @@ class Aggregate(StrEnum):
     MEAN = "mean"
     LAST = "last"
     DAYS = "days"
+    """Number of days with a value above zero."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,24 +63,33 @@ SOURCE = Field("source", Kind.TEXT)
 class Metric:
     """A numeric column. An empty cell means the value is missing.
 
+    Hard limits mark impossible values (more than 1440 minutes in a day, a mood of 6)
+    and are errors. Plausible bounds mark unlikely but possible values and are
+    warnings; config.toml can override them per metric.
+
     Attributes:
         column: Column name, ending in its unit (e.g. ``asleep_min``).
         label: Name shown in the dashboard.
         unit: Unit shown in the dashboard.
-        minimum: Lowest valid value; anything lower is an error in the file.
-        maximum: Highest valid value; anything higher is an error in the file.
         aggregate: How daily values sum up over a period.
         higher_is_better: True or False when one direction is good, None when
             neither is.
+        minimum: Hard lower limit, or None when there is none.
+        maximum: Hard upper limit, or None when there is none.
+        plausible: Default (low, high) bounds for warnings, or None.
+        related: Metrics, as ``category.column``, that usually move with this one.
+            If they change while this one stays flat, it is flagged as stuck.
     """
 
     column: str
     label: str
     unit: str
-    minimum: float
-    maximum: float
     aggregate: Aggregate
     higher_is_better: bool | None = None
+    minimum: float | None = None
+    maximum: float | None = None
+    plausible: tuple[float, float] | None = None
+    related: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,11 +121,13 @@ class Category:
     Attributes:
         name: Identifier, also the name of its section in config.toml.
         label: Name shown in the dashboard.
-        file: File name inside the data folder.
+        file: File name inside the data folder; a folder name ending in ``/`` for
+            one Markdown file per day.
         grain: What one row stands for.
         fields: Non-numeric columns, in file order.
         metrics: Numeric columns, in file order after the fields.
-        key: Columns whose values must be unique across rows.
+        key: Columns whose values must be unique across rows; empty when rows
+            can repeat (e.g. two identical purchases on one day).
         sensitive: Whether the dashboard hides it until "Show sensitive" is on.
         checks: Extra row checks; each returns a problem description or None.
         day_filter: Decides which days count toward averages, e.g. leaving out

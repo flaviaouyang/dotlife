@@ -1,7 +1,22 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import cast
 
 from dotlife.schema import Context, Row
+
+
+def local_date(row: Row, column: str, context: Context) -> date:
+    """Return the user's local date of a timestamp column.
+
+    Args:
+        row: A parsed row.
+        column: Name of a timestamp column in the row.
+        context: Supplies the user's time zone, which handles DST and timestamps
+            recorded with another UTC offset.
+
+    Returns:
+        The local date.
+    """
+    return cast(datetime, row[column]).astimezone(context.timezone).date()
 
 
 def end_after_start(row: Row, context: Context) -> str | None:
@@ -25,19 +40,34 @@ def date_is_wake_date(row: Row, context: Context) -> str | None:
 
     Args:
         row: A parsed row with ``date`` and an ``end`` timestamp.
-        context: Supplies the user's time zone, which handles DST and sessions
-            recorded with another UTC offset.
+        context: Supplies the user's time zone.
 
     Returns:
         A problem description, or None when the row is fine.
     """
-    wake_date = cast(datetime, row["end"]).astimezone(context.timezone).date()
+    wake_date = local_date(row, "end", context)
     if row["date"] == wake_date:
         return None
     return (
         f"date {row['date']} should be the wake date {wake_date}: "
         "a night counts toward the day you woke up"
     )
+
+
+def date_is_start_date(row: Row, context: Context) -> str | None:
+    """Check that a session is filed under the local date it started.
+
+    Args:
+        row: A parsed row with ``date`` and a ``start`` timestamp.
+        context: Supplies the user's time zone.
+
+    Returns:
+        A problem description, or None when the row is fine.
+    """
+    start_date = local_date(row, "start", context)
+    if row["date"] == start_date:
+        return None
+    return f"date {row['date']} should be the start date {start_date}"
 
 
 def watch_worn(row: Row, context: Context) -> bool:

@@ -1,3 +1,4 @@
+import math
 import unittest
 from datetime import date, datetime, timedelta, timezone
 
@@ -20,18 +21,40 @@ class CategorySpecTest(unittest.TestCase):
             with self.subTest(category=category.name):
                 self.assertLessEqual(set(category.key), set(category.columns))
 
-    def test_ranges_are_ordered(self):
-        """Each metric's minimum is below its maximum."""
+    def test_metric_columns_are_unique_within_a_category(self):
+        """No category repeats a column."""
+        for category in CATEGORIES:
+            with self.subTest(category=category.name):
+                self.assertEqual(len(category.columns), len(set(category.columns)))
+
+    def test_limits_and_plausible_bounds_are_ordered(self):
+        """Hard limits and plausible bounds run low to high, bounds inside limits."""
+        for category in CATEGORIES:
+            for metric in category.metrics:
+                with self.subTest(metric=f"{category.name}.{metric.column}"):
+                    low = -math.inf if metric.minimum is None else metric.minimum
+                    high = math.inf if metric.maximum is None else metric.maximum
+                    self.assertLess(low, high)
+                    if metric.plausible is not None:
+                        self.assertLess(metric.plausible[0], metric.plausible[1])
+                        self.assertLessEqual(low, metric.plausible[0])
+                        self.assertLessEqual(metric.plausible[1], high)
+
+    def test_related_metrics_exist(self):
+        """Every related metric names a real category and column."""
+        columns = {
+            f"{category.name}.{metric.column}"
+            for category in CATEGORIES
+            for metric in category.metrics
+        }
         for category in CATEGORIES:
             for metric in category.metrics:
                 with self.subTest(metric=metric.column):
-                    self.assertLess(metric.minimum, metric.maximum)
+                    self.assertLessEqual(set(metric.related), columns)
 
     def test_columns_in_file_order(self):
         """Fields come first, then metrics."""
-        self.assertEqual(
-            SLEEP.columns, ("date", "start", "end", "source", "asleep_min")
-        )
+        self.assertEqual(MOOD.columns, ("date", "source", "mood", "energy", "stress"))
 
 
 class RowParserTest(unittest.TestCase):
@@ -57,6 +80,10 @@ class RowParserTest(unittest.TestCase):
                 "end": datetime(2026, 3, 8, 7, 10, tzinfo=offset),
                 "source": "watch",
                 "asleep_min": 412.0,
+                "deep_min": None,
+                "rem_min": None,
+                "light_min": None,
+                "awake_min": None,
             },
         )
 

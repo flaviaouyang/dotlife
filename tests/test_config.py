@@ -1,9 +1,11 @@
 import tempfile
 import unittest
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
-from dotlife.categories import ACTIVITY, MOOD
-from dotlife.config import context_for, load_config
+from dotlife.categories import ACTIVITY, FITNESS_MARKERS, MOOD
+from dotlife.config import context_for, load_config, plausible_range, related_metrics
+from dotlife.schema import Context
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -38,6 +40,48 @@ class ConfigTest(unittest.TestCase):
             path = Path(folder) / "config.toml"
             path.write_text('timezone = "UTC"\n', encoding="utf-8")
             self.assertEqual(load_config(path), {"timezone": "UTC"})
+
+
+class OverrideTest(unittest.TestCase):
+    """Plausible bounds and related metrics default to the spec; config overrides."""
+
+    steps = ACTIVITY.metrics[0]
+    vo2max = FITNESS_MARKERS.metrics[0]
+
+    def context(self, options: dict) -> Context:
+        """Build a context with the given options.
+
+        Args:
+            options: The category's config section.
+
+        Returns:
+            The context.
+        """
+        return Context(ZoneInfo("UTC"), options)
+
+    def test_plausible_default_and_override(self):
+        """Without an override the spec's bounds apply; with one, config wins."""
+        self.assertEqual(plausible_range(self.steps, self.context({})), (0, 60_000))
+        override = self.context({"plausible": {"steps": [0, 150_000]}})
+        self.assertEqual(plausible_range(self.steps, override), (0.0, 150_000.0))
+
+    def test_bad_plausible_override(self):
+        """Overrides that aren't two ordered numbers raise a message naming the key."""
+        for bad in ([5], [10, 1], "high", [0, "x"]):
+            with (
+                self.subTest(bad=bad),
+                self.assertRaisesRegex(ValueError, "plausible.steps"),
+            ):
+                plausible_range(self.steps, self.context({"plausible": {"steps": bad}}))
+
+    def test_related_default_and_override(self):
+        """An empty override list turns the stuck flag off."""
+        self.assertEqual(
+            related_metrics(self.vo2max, self.context({})),
+            ("heart.resting_hr_bpm", "activity.active_min"),
+        )
+        off = self.context({"related": {"vo2max_ml_kg_min": []}})
+        self.assertEqual(related_metrics(self.vo2max, off), ())
 
 
 if __name__ == "__main__":

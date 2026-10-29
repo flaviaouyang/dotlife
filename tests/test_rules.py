@@ -1,8 +1,13 @@
 import unittest
 from zoneinfo import ZoneInfo
 
-from dotlife.categories import SLEEP
-from dotlife.rules import date_is_wake_date, end_after_start, watch_worn
+from dotlife.categories import SLEEP, WORKOUTS
+from dotlife.rules import (
+    date_is_start_date,
+    date_is_wake_date,
+    end_after_start,
+    watch_worn,
+)
 from dotlife.schema import Context, row_parser
 
 NEW_YORK = Context(
@@ -57,6 +62,26 @@ class WakeDateTest(unittest.TestCase):
             "2026-03-08", "2026-03-08T07:30-04:00", "2026-03-07T23:30-05:00"
         )
         self.assertIsNotNone(end_after_start(row, NEW_YORK))
+
+
+class StartDateTest(unittest.TestCase):
+    """A workout counts toward the local date it started."""
+
+    def test_late_workout_crossing_midnight(self):
+        """A session from 23:30 to 00:30 files under the day it started."""
+        parse = row_parser(WORKOUTS)
+        raw = {
+            "start": "2026-06-01T23:30-04:00",
+            "end": "2026-06-02T00:30-04:00",
+            "type": "run",
+            "source": "watch",
+        }
+        self.assertIsNone(
+            date_is_start_date(parse({**raw, "date": "2026-06-01"}), NEW_YORK)
+        )
+        self.assertIsNotNone(
+            date_is_start_date(parse({**raw, "date": "2026-06-02"}), NEW_YORK)
+        )
 
 
 class WatchWornTest(unittest.TestCase):
