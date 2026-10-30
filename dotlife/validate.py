@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
@@ -322,6 +322,29 @@ def day_total_problems(
     ]
 
 
+def future_problems(dates: set[date], context: Context) -> list[Problem]:
+    """Warn about dates after today, which no reading can have.
+
+    Args:
+        dates: The file's dates.
+        context: Supplies the time zone that decides what today is.
+
+    Returns:
+        One warning naming how many days lie ahead, or none.
+    """
+    today = datetime.now(context.timezone).date()
+    ahead = sorted(day for day in dates if day > today)
+    if not ahead:
+        return []
+    return [
+        Problem(
+            Severity.WARNING,
+            f"{plural(len(ahead), 'day')} after today, up to {ahead[-1]}; check "
+            "the source's clock and how its dates are worked out",
+        )
+    ]
+
+
 def validate_csv(category: Category, path: Path, context: Context) -> FileReport:
     """Validate one category's CSV file.
 
@@ -394,6 +417,7 @@ def validate_csv(category: Category, path: Path, context: Context) -> FileReport
                 if (value := row.get(column)) is not None:
                     totals[column, day] += cast(float, value)
     report.problems += day_total_problems(category, totals)
+    report.problems += future_problems(dates, context)
     if dates:
         report.first_date, report.last_date = min(dates), max(dates)
     if category.expect_every_day:

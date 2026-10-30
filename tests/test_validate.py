@@ -160,6 +160,26 @@ class CsvValidationTest(ValidatorTestCase):
             (3, "duplicate of line 2 (date must be unique)"),
         )
 
+    def test_dates_after_today(self):
+        """Rows dated in the future are a warning naming the last one."""
+        write_csv(
+            self.data,
+            "mood.csv",
+            [
+                ["date", "source", "mood"],
+                ["2026-01-05", "app", "4"],
+                ["2999-01-01", "app", "3"],
+                ["2999-01-02", "app", "3"],
+            ],
+        )
+        self.assertEqual(
+            self.messages(self.validate(), Severity.WARNING),
+            [
+                "2 days after today, up to 2999-01-02; check the source's clock "
+                "and how its dates are worked out"
+            ],
+        )
+
     def test_inferred_source_names_its_input(self):
         """A bare inferred source is an error; inferred-<input> is fine."""
         write_csv(
