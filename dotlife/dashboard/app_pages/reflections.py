@@ -101,8 +101,9 @@ if not selection().show_sensitive:
     )
 elif not data.reflections:
     st.info(
-        "Write short reflections in `reflections/2026.txt`, each starting with its "
-        "time, like `[2026-03-08 21:30] Long walk after work. #walking`.",
+        "Write short reflections in `data/sources/manual/reflections/2026.txt`, "
+        "each starting with its time, like `[2026-03-08 21:30] Long walk after "
+        "work. #walking`, then run `make fresh`. See `docs/sources/manual.md`.",
         icon=":material/edit_note:",
     )
 else:

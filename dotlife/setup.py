@@ -1139,6 +1139,8 @@ def guide_link(value: str) -> str:
         return f"[{file}](docs/sources/{file})"
     if value.startswith("inferred-"):
         return "[inference.md](docs/sources/inference.md)"
+    if value == MANUAL:
+        return "[manual.md](docs/sources/manual.md)"
     return "none yet"
 
 

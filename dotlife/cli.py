@@ -9,6 +9,7 @@ from pathlib import Path
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data, load_config
 from dotlife.fresh import fresh_steps, run_fresh
 from dotlife.setup import run_answers, run_setup
+from dotlife.staging import SOURCES_DIR
 from dotlife.terminal import prompter
 from dotlife.validate import format_json, format_text, validate_folder
 
@@ -82,14 +83,18 @@ def run_dashboard(args: argparse.Namespace) -> int:
 
 
 def run_fresh_command(args: argparse.Namespace) -> int:
-    """Run the source scripts listed in config.toml, then validate.
+    """Run the source scripts listed in config.toml, merge what they staged, validate.
+
+    With no steps, it still merges and validates when rows were staged by hand, in
+    ``data/sources/manual/``.
 
     Args:
         args: Parsed arguments: ``config`` and ``only``.
 
     Returns:
         0 when every step finished and the data is valid, 1 when not, 2 when
-        config.toml can't be read, lists no steps, or ``--only`` names none.
+        config.toml can't be read, lists no steps and nothing is staged, or
+        ``--only`` names no step.
     """
     try:
         config = load_config(args.config)
@@ -99,7 +104,8 @@ def run_fresh_command(args: argparse.Namespace) -> int:
         return EXIT_USAGE
     if args.only is not None:
         steps = [step for step in steps if step.name == args.only]
-    if not steps:
+    staged = args.config.parent / config.get("data_dir", "data") / SOURCES_DIR
+    if not steps and (args.only is not None or not staged.is_dir()):
         print(
             f"dotlife: no step named {args.only!r} in [[fresh.steps]]"
             if args.only is not None

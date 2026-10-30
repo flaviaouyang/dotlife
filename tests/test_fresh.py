@@ -199,3 +199,20 @@ class FreshRunTest(unittest.TestCase):
         self.assertEqual((code, "no step named 'oura'" in output), (2, True))
         code, output = self.run_fresh({})
         self.assertEqual((code, "no [[fresh.steps]]" in output), (2, True))
+
+    def test_hand_entries_alone_are_merged(self):
+        """With no steps, rows staged by hand are still merged and validated."""
+        manual = self.root / "data" / "sources" / "manual"
+        manual.mkdir(parents=True)
+        (manual / "mood.csv").write_text("date,source,mood\n2026-01-05,manual,4\n")
+        config = self.root / "config.toml"
+        config.write_text(
+            'format_version = 1\ntimezone = "UTC"\ntrack = ["mood"]\n\n'
+            '[sources]\nmood = ["manual"]\n',
+            encoding="utf-8",
+        )
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(["fresh", "--config", str(config)])
+        self.assertEqual(code, 0, output.getvalue())
+        self.assertIn("mood.csv: 1 row from manual", output.getvalue())
