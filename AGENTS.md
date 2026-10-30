@@ -8,7 +8,7 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 
 - `FORMAT.md`: the data format. It is the source of truth for every file, column, unit and rule. Read it before writing any data file.
 - `config.toml`: the person's settings: time zone, which categories are switched on, thresholds, budgets and custom metrics. Change it only when they ask, and say what changed.
-- `sources.md`: their setup in plain words: which source provides each category, the priority when two sources overlap, the choices the guides leave to them, and how each source is fetched. `setup` writes it and `maintain` keeps it current. Read it before changing anything.
+- `sources.md`: their setup in plain words: which source provides each category, the priority when two sources overlap, the choices the guides leave to them, and how each source is fetched. `setup` writes it and `maintain` keeps it current. Read it before changing anything. `sources.example.md` shows a finished one.
 - `data/`: their data files, in the format. `make fresh` builds them from `data/sources/`.
 - `data/sources/<source>/`: each source's rows, as its script staged them, in the format. Hand-entered rows go in `data/sources/manual/`.
 - `inbox/`: exports waiting for a script to read them, e.g. Apple Health's `export.zip`. Ignored by git.

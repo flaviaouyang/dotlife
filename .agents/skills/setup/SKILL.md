@@ -54,7 +54,7 @@ It checks the answers and writes `config.toml` and the top of `sources.md`. Fix 
 
 ## 5. Settle each source's choices
 
-For each source in turn, read its guide in `docs/sources/` from start to end. Most guides have a "Choices to make" section; others leave choices in their mapping notes. Ask the person about each, with the guide's usual answer as the default. Then add a section to `sources.md`, below the setup markers, headed with the source's name:
+For each source in turn, read its guide in `docs/sources/` from start to end. Most guides have a "Choices to make" section; others leave choices in their mapping notes. Ask the person about each, with the guide's usual answer as the default. Then add a section to `sources.md`, below the setup markers, headed with the source's name (`sources.example.md` shows finished ones):
 
 - How the data gets out, and what the person has to do each time, e.g. "Export from the Health app into `inbox/export.zip`".
 - Every choice and its answer, including any ranking inside the source (e.g. watch over phone) that `[sources]` can't show.

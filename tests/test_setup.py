@@ -349,3 +349,48 @@ class SourcesFileTest(unittest.TestCase):
         self.assertIn("new", text)
         self.assertNotIn("old", text)
         self.assertIn("Token in the keychain.", text)
+
+    def test_example_matches_setup(self):
+        """sources.example.md's setup block is what dotlife setup writes for Alice."""
+        apple = ["apple-health"]
+        answers = {
+            "timezone": "Europe/London",
+            "track": [
+                "activity",
+                "workouts",
+                "sleep",
+                "heart",
+                "body",
+                "fitness_markers",
+                "mindfulness",
+                "mood",
+                "reflections",
+                "weather",
+            ],
+            "sources": {
+                "activity": apple,
+                "workouts": apple,
+                "sleep": apple,
+                "heart": apple,
+                "body": [*apple, "manual"],
+                "fitness_markers": apple,
+                "mindfulness": apple,
+                "mood": ["manual", FROM_REFLECTIONS],
+                "reflections": ["jrnl"],
+                "weather": ["open-meteo"],
+            },
+            "location": [51.51, -0.13],
+        }
+        with tempfile.TemporaryDirectory() as folder:
+            config = Path(folder) / "config.toml"
+            shutil.copy(ROOT / "config.toml", config)
+            answers_path = Path(folder) / "answers.json"
+            answers_path.write_text(json.dumps(answers), encoding="utf-8")
+            run_answers(config, answers_path)
+            written = (Path(folder) / "sources.md").read_text(encoding="utf-8")
+        example = (ROOT / "sources.example.md").read_text(encoding="utf-8")
+
+        def block(text: str) -> str:
+            return SOURCES_START + text.split(SOURCES_START)[1].split(SOURCES_END)[0]
+
+        self.assertEqual(block(example), block(written))

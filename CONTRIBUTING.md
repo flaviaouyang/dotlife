@@ -10,6 +10,7 @@ The project is early, so most of these don't exist yet. All project code lives i
 
 - `FORMAT.md`: the data format spec. Its per-category tables are generated from `dotlife/categories.py` by `make docs`, so change the specs, not the tables. A test fails when the file is out of date.
 - `config.toml`: every number and threshold. Code reads it and never hard-codes a value.
+- `sources.example.md`: a finished `sources.md` for Alice, made up. A test checks that its setup block is what `dotlife setup` writes; keep the rest in step with the guides.
 - `sample/`: the demo data, half a year of Alice (of Alice and Bob), with its own `config.toml`. Every value is made up, and the files are generated, so don't edit them by hand. A test checks that it validates with no errors and only its planted warnings.
 - `dotlife/`: the package. Run it with `uv run dotlife <command>`, or `python3 -m dotlife <command>` without installing.
   - `schema.py`: the building blocks: `Field`, `Metric`, `Category` and `Context` (frozen dataclasses) and row parsing.
