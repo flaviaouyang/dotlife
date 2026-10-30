@@ -140,8 +140,8 @@ date,source,resting_hr_bpm,hrv_ms
 
 ## Watch out for
 
-- **Sync lag.** Sleep and readiness only arrive after the person opens the Oura app; activity, stress and heart rate sync in the background ([API docs](https://cloud.ouraring.com/v2/docs)). Re-fetch the last few days on every sync and overwrite Oura's rows for those dates.
-- **Edited sleep.** Bedtime edits and reanalysis change a period (`sleep_analysis_reason` = `bedtime_edit` etc.) ([OpenAPI spec](https://cloud.ouraring.com/v2/static/json/openapi-1.43.json)). Match rows by date and replace them; the `start` may have moved.
+- **Sync lag.** Sleep and readiness only arrive after the person opens the Oura app; activity, stress and heart rate sync in the background ([API docs](https://cloud.ouraring.com/v2/docs)). Re-fetch the last few days on every sync and stage them with `window=(first, last)`, which replaces Oura's rows for those dates.
+- **Edited sleep.** Bedtime edits and reanalysis change a period (`sleep_analysis_reason` = `bedtime_edit` etc.) ([OpenAPI spec](https://cloud.ouraring.com/v2/static/json/openapi-1.43.json)). The `start` may have moved, so replace by date: staging a window replaces every row of those dates, and the old one goes.
 - **4 am activity day.** Steps taken between midnight and 4 am land on the previous `day` (see [FORMAT.md](../../FORMAT.md#days-weeks-and-months) on a source's own day). Daily totals won't match a watch that resets at midnight.
 - **Non-wear.** `daily_activity` has `non_wear_time` (seconds) and `class_5_min` uses `0` for non-wear. A day mostly off the finger still gets a document with low steps; keep the real values and let dotlife's watch-off rule handle it.
 - **Duplicate workouts.** `workout` `source` can be `manual`, `autodetected`, `confirmed`, `workout_heart_rate`, `live_third_party_heart_rate` or `live_oura_heart_rate` ([OpenAPI spec](https://cloud.ouraring.com/v2/static/json/openapi-1.43.json)), so some workouts are typed in by hand or recorded with another device. If the same session also comes from a watch, keep the source ranked higher in `sources.md`.

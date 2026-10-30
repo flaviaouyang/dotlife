@@ -68,8 +68,8 @@ The `journals` key in the config names each journal and its path ([Configuration
 - **Stars.** jrnl appends a space and `*` to the title line of a starred entry ([`Entry.py`](https://github.com/jrnl-org/jrnl/blob/develop/jrnl/journals/Entry.py)). dotlife reads a star in the same place.
 - **Time zone.** jrnl doesn't support `%z` or `%Z` ([Configuration file](https://jrnl.sh/en/stable/reference-config-file/)), so times are local clock times with no offset, as dotlife expects. Entries written while travelling keep the clock time of where they were written.
 - **Missing times.** jrnl gives an entry with a date but no time `default_hour` and `default_minute` (09:00 by default) ([Configuration file](https://jrnl.sh/en/stable/reference-config-file/)). Those times are jrnl's, not the person's; copy them as they are and don't adjust them.
-- **No `source` column.** Reflections files have none. Record in `sources.md` that `reflections/` comes from jrnl, and which journals.
-- **Sync.** Re-export the current year on each sync and replace `reflections/<year>.txt`, rather than appending, so edits and deletions made in jrnl carry over. Only replace a file this way if jrnl is its only source.
+- **No `source` column.** Reflections files have none; the staging folder says where they came from. Record in `sources.md` which journals are included.
+- **Sync.** Re-export the current year on each sync and replace `<year>.txt` in the folder `staging.path("jrnl", "reflections")` gives (`data/sources/jrnl/reflections/`), rather than appending, so edits and deletions made in jrnl carry over. `make fresh` merges it into `reflections/`, day by day by the ranking in `[sources]`. Every source of reflections must write times in the one `[reflections] time_format`.
 
 A sample entry, made up:
 

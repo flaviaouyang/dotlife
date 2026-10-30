@@ -103,7 +103,7 @@ date,category,source,hours
 
 ### Re-syncing
 
-Calendars are edited after the fact: meetings move, get cancelled or are entered late. On each sync, recompute a recent window (for example the last 30 days) and replace every `time.csv` row from this source for the dates in that window, instead of appending.
+Calendars are edited after the fact: meetings move, get cancelled or are entered late. On each sync, recompute a recent window (for example the last 30 days) and stage it with `window=(first, last)`, so every staged row for those dates is replaced rather than appended to. A `command` script writes `data/sources/<source>/time.csv` itself and does the same.
 
 ### Optional: life events, social time and travel
 

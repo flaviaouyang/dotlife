@@ -80,7 +80,7 @@ dotlife reflections are plain-text entries, each starting with a local time: `[2
 - **One entry per note at a fixed time the person chooses**, e.g. all text under `## Reflections` as one entry at 21:00. This is a convention, not a measurement: say so in `sources.md`, and use it only if the person picks it.
 - **Leave it out.** Text with no time and no agreed rule is not copied.
 
-Never take a time from file timestamps or make one up. Set `[reflections] time_format` to match what the script writes (the default `%Y-%m-%d %H:%M` fits the examples above), and write one `reflections/YYYY.txt` per year, entries sorted by time.
+Never take a time from file timestamps or make one up. Set `[reflections] time_format` to match what the script writes (the default `%Y-%m-%d %H:%M` fits the examples above), and write one `YYYY.txt` per year, entries sorted by time, into the folder `staging.path("obsidian-daily-notes", "reflections")` gives (`data/sources/obsidian-daily-notes/reflections/`). `make fresh` merges it into `reflections/`. If jrnl is a source too, both must write times in the one `time_format`.
 
 Daily notes are Markdown; reflections are plain text. Convert the text when copying it:
 
@@ -105,7 +105,7 @@ Use `obsidian` in the `source` column for every row.
 - **Free text.** A note that doesn't follow the agreed conventions gives no data. Report notes the script couldn't read (e.g. `mood: good`) instead of guessing.
 - **Missing stays missing.** A daily note that doesn't exist, or a property left blank, is a gap, not a `0`.
 - **Property types.** A property name has one type across the vault ([Properties](https://obsidian.md/help/properties)). Check that `mood`, `energy` and `stress` are set to Number, so Obsidian's editor asks for a number.
-- **Edits after the fact.** Old notes change. Re-read the whole period on each sync and rewrite the rows that come from Obsidian, rather than appending only new days.
+- **Edits after the fact.** Old notes change. Re-read the whole period on each sync and stage every row again (or a recent window with `window=`), rather than appending only new days.
 - **Stray files.** Read only file names that match the date format, so copies and other notes in the folder are skipped.
 - **Date format changes.** If the person changes the date format, older notes keep their old names. Record both formats in `sources.md`.
 - **Templates.** A note created from the template but never filled in may hold placeholder values. Agree with the person whether template defaults (e.g. `mood:` left blank) mean "not recorded"; they should.

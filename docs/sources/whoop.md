@@ -90,7 +90,7 @@ date,start,end,source,asleep_min,deep_min,rem_min,light_min,awake_min
 
 ## Watch out for
 
-- **Rescoring.** Scores arrive as `PENDING_SCORE` first, and past cycle boundaries can move for a few days. Re-fetch the last week on each sync and overwrite WHOOP's rows for those dates.
+- **Rescoring.** Scores arrive as `PENDING_SCORE` first, and past cycle boundaries can move for a few days. Re-fetch the last week on each sync and stage it with `window=(first, last)`, which replaces WHOOP's rows for those dates.
 - **Cycle versus calendar day.** A late night pushes the next sleep onset, so a cycle's steps and energy can run well past midnight. Expect daily totals that don't match other devices.
 - **Recovery and naps.** Map recovery by `sleep_id`, not by date, so a nap never picks up the night's HRV.
 - **Calibration.** Recovery has `user_calibrating`; for a new member the values may be less reliable. The values are still real readings, so keep them.
