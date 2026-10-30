@@ -134,6 +134,23 @@ class StagingTest(unittest.TestCase):
             "sleep.csv: left out whoop, because [sources] doesn't list it", lines
         )
 
+    def test_merge_reports_values_left_out(self):
+        """A lower source's value the winning row lacks is named, not lost quietly."""
+        config = CONFIG | {
+            "track": ["body"],
+            "sources": {"body": ["apple-health", "manual"]},
+        }
+        staging = Staging(config, self.data)
+        day = date(2026, 3, 2)
+        staging.write("apple-health", "body", [{"date": day, "weight_kg": 71.2}])
+        staging.write("manual", "body", [{"date": day, "waist_cm": 80}])
+        lines = merge(self.data, config)
+        self.assertIn(
+            "body.csv: waist_cm from manual left out on 1 day, when a higher-ranked "
+            "source had the day",
+            lines,
+        )
+
     def test_merge_keeps_every_transaction(self):
         """Rows that can repeat keep every source's rows."""
         for bank in ("bank-a", "bank-b"):

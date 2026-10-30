@@ -2,6 +2,7 @@ import csv
 import io
 import math
 import os
+from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -311,6 +312,43 @@ def ranked_by_date(
     ]
 
 
+def left_out_values(
+    tables: Sequence[tuple[str, Sequence[Mapping[str, str]]]],
+    kept: Sequence[Mapping[str, str]],
+) -> list[tuple[str, str, int]]:
+    """Find values a lower-ranked source had that the kept rows of that date lack.
+
+    Args:
+        tables: (source, rows) pairs, best source first.
+        kept: The rows ``ranked_by_date`` kept from them.
+
+    Returns:
+        (column, source, days) for each column a source had a value in on days
+        its rows were left out and the kept rows had none.
+
+    Example:
+        >>> scale = [{"date": "2026-03-02", "weight_kg": "71.2", "waist_cm": ""}]
+        >>> tape = [{"date": "2026-03-02", "weight_kg": "", "waist_cm": "80"}]
+        >>> tables = [("scale", scale), ("manual", tape)]
+        >>> left_out_values(tables, ranked_by_date(tables))
+        [('waist_cm', 'manual', 1)]
+    """
+    filled: dict[str, set[str]] = defaultdict(set)
+    for row in kept:
+        filled[row.get("date", "")] |= {name for name, value in row.items() if value}
+    kept_rows = {id(row) for row in kept}
+    days: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for source, rows in tables:
+        for row in rows:
+            if id(row) in kept_rows:
+                continue
+            day = row.get("date", "")
+            for name, value in row.items():
+                if value and name != "source" and name not in filled[day]:
+                    days[name, source].add(day)
+    return sorted((name, source, len(dates)) for (name, source), dates in days.items())
+
+
 def entry_blocks(text: str, time_format: str) -> list[tuple[datetime, str]]:
     """Split a reflections file into entries, each kept exactly as written.
 
@@ -388,7 +426,8 @@ def merge(data_dir: Path, config: Mapping[str, Any]) -> list[str]:
         config: The whole of config.toml.
 
     Returns:
-        A line per data file built, and one per staged folder left out.
+        A line per data file built, one per staged folder left out, and one per
+        column whose values a higher-ranked source's rows replaced with nothing.
     """
     root = data_dir / SOURCES_DIR
     if not root.is_dir():
@@ -428,6 +467,11 @@ def merge(data_dir: Path, config: Mapping[str, Any]) -> list[str]:
                 if category.key
                 else [row for _, source_rows in rows for row in source_rows]
             )
+            lines += [
+                f"{category.file}: {column} from {source} left out on "
+                f"{plural(days, 'day')}, when a higher-ranked source had the day"
+                for column, source, days in left_out_values(rows, kept)
+            ]
             kept.sort(key=lambda row: row_order(category, row))
             columns = column_order(category, [header for _, (header, _) in tables])
             write_if_changed(data_dir / category.file, table_text(columns, kept))
