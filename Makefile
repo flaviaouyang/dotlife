@@ -7,7 +7,7 @@ help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
 
 install: ## Install dependencies and link the Streamlit agent skill
-	uv sync
+	uv sync --compile-bytecode
 	@skill=$$(uv run python -c "import pathlib, streamlit; print(pathlib.Path(streamlit.__file__).parent / '.agents/skills/developing-with-streamlit')") && \
 	mkdir -p .agents/skills && ln -sfn "$$skill" .agents/skills/developing-with-streamlit
 
