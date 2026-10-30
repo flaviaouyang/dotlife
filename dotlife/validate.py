@@ -437,8 +437,9 @@ def validate_reflections(
         context: Its settings: the time format and the tag symbols.
 
     Returns:
-        What was found: one row per entry, warnings for misnamed files and stray
-        lines, errors for entries filed under the wrong year.
+        What was found: one row per entry, warnings for misnamed files, stray
+        lines and entries timed after now, errors for entries filed under the
+        wrong year.
     """
     report = FileReport(category.name, str(folder), noun="entry")
     time_format, symbols = settings(context.options)
@@ -472,6 +473,18 @@ def validate_reflections(
         ]
         report.rows += len(parsed.reflections)
         days.update(reflection.day for reflection in parsed.reflections)
+        now = datetime.now(context.timezone).replace(tzinfo=None)
+        ahead = [r for r in parsed.reflections if r.time > now]
+        if ahead:
+            report.problems.append(
+                Problem(
+                    Severity.WARNING,
+                    f"{path.name}: {plural(len(ahead), 'entry', 'entries')} timed "
+                    f"after now, up to {max(r.time for r in ahead):%Y-%m-%d %H:%M}; "
+                    "check the time format and the device's clock",
+                    ahead[0].line,
+                )
+            )
     if days:
         report.first_date, report.last_date = min(days), max(days)
     return report

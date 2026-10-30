@@ -314,6 +314,23 @@ class FolderValidationTest(ValidatorTestCase):
         (error,) = self.messages(report, Severity.ERROR)
         self.assertIn("belongs in 2025.txt", error)
 
+    def test_reflection_after_now(self):
+        """An entry timed in the future is a warning on its line."""
+        folder = self.data / "reflections"
+        folder.mkdir()
+        (folder / "2999.txt").write_text(
+            "[2999-01-05 08:00] From the future.\n", encoding="utf-8"
+        )
+        (warning,) = [
+            problem
+            for problem in self.validate().all_problems
+            if problem.severity is Severity.WARNING
+        ]
+        self.assertEqual(warning.line, 1)
+        self.assertIn(
+            "1 entry timed after now, up to 2999-01-05 08:00", warning.message
+        )
+
     def test_custom_metric(self):
         """A custom metric from config is validated like a built-in one."""
         write_csv(
