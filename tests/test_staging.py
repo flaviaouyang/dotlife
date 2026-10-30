@@ -134,6 +134,32 @@ class StagingTest(unittest.TestCase):
             "sleep.csv: left out whoop, because [sources] doesn't list it", lines
         )
 
+    def test_sessions_rank_by_overlapping_time(self):
+        """A better source wins a shared session; one only a lower source has stays."""
+
+        def session(day: int, start: int, hours: int, minutes: int) -> dict:
+            begin = datetime(2026, 3, day, start, tzinfo=UTC)
+            end = begin + timedelta(hours=hours)
+            return {
+                "date": end.date(),
+                "start": begin,
+                "end": end,
+                "asleep_min": minutes,
+            }
+
+        self.staging.write("oura", "sleep", [session(2, 14, 1, 40)])
+        self.staging.write(
+            "apple-health",
+            "sleep",
+            [session(1, 23, 8, 397), session(2, 14, 1, 35), session(2, 23, 8, 410)],
+        )
+        merge(self.data, CONFIG)
+        rows = self.text("sleep.csv").splitlines()[1:]
+        self.assertEqual(
+            [(row.split(",")[3], row.split(",")[4]) for row in rows],
+            [("apple-health", "397"), ("oura", "40"), ("apple-health", "410")],
+        )
+
     def test_merge_reports_values_left_out(self):
         """A lower source's value the winning row lacks is named, not lost quietly."""
         config = CONFIG | {

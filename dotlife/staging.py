@@ -2,6 +2,7 @@ import csv
 import io
 import math
 import os
+from bisect import bisect_right
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -18,7 +19,7 @@ from dotlife.config import (
     load_config,
 )
 from dotlife.reflections import header_time, settings
-from dotlife.schema import Category, Grain
+from dotlife.schema import Category, Grain, parse_timestamp
 from dotlife.validate import plural
 
 SOURCES_DIR = "sources"
@@ -312,6 +313,96 @@ def ranked_by_date(
     ]
 
 
+Span = tuple[datetime, datetime]
+
+
+def session_span(row: Mapping[str, str]) -> Span | None:
+    """Read a session's start and end.
+
+    Args:
+        row: A sleep or workout row's cells.
+
+    Returns:
+        The start and end, or None when either is missing or unreadable; the
+        validator reports those.
+    """
+    try:
+        return parse_timestamp(row["start"]), parse_timestamp(row["end"])
+    except (KeyError, ValueError):
+        return None
+
+
+def joined(spans: Iterable[Span]) -> list[Span]:
+    """Join overlapping spans, so the result is sorted and never overlaps itself.
+
+    Args:
+        spans: Any spans.
+
+    Returns:
+        The joined spans, earliest first.
+    """
+    result: list[Span] = []
+    for start, end in sorted(spans):
+        if result and start < result[-1][1]:
+            result[-1] = (result[-1][0], max(end, result[-1][1]))
+        else:
+            result.append((start, end))
+    return result
+
+
+def overlaps(taken: Sequence[Span], span: Span) -> bool:
+    """Tell whether a span overlaps any of a sorted, joined list.
+
+    Args:
+        taken: Spans from ``joined``.
+        span: The span to check. Touching at an end isn't overlapping.
+
+    Returns:
+        True when they share any time.
+    """
+    start, end = span
+    index = bisect_right(taken, start, key=lambda each: each[0])
+    before = index > 0 and taken[index - 1][1] > start
+    return before or (index < len(taken) and taken[index][0] < end)
+
+
+def ranked_by_time(
+    tables: Sequence[tuple[str, Sequence[Mapping[str, str]]]],
+) -> list[Mapping[str, str]]:
+    """Keep each session unless it overlaps one from a better source.
+
+    The same night or workout recorded by two sources comes from the better one,
+    and a session only a lower source has (a nap, a night without the ring) stays.
+
+    Args:
+        tables: (source, rows) pairs, best source first.
+
+    Returns:
+        The rows kept, in source order.
+
+    Example:
+        >>> def night(start, end):
+        ...     return {"start": f"2026-03-0{start}+01:00",
+        ...             "end": f"2026-03-0{end}+01:00"}
+        >>> ring = [night("2T23:00", "3T07:00")]
+        >>> watch = [night("2T23:10", "3T06:50"), night("3T14:00", "3T14:40")]
+        >>> kept = ranked_by_time([("ring", ring), ("watch", watch)])
+        >>> [row["start"][11:16] for row in kept]
+        ['23:00', '14:00']
+    """
+    taken: list[Span] = []
+    kept: list[Mapping[str, str]] = []
+    for _, rows in tables:
+        spans = []
+        for row in rows:
+            span = session_span(row)
+            if span is None or not overlaps(taken, span):
+                kept.append(row)
+                spans += [] if span is None else [span]
+        taken = joined([*taken, *spans])
+    return kept
+
+
 def left_out_values(
     tables: Sequence[tuple[str, Sequence[Mapping[str, str]]]],
     kept: Sequence[Mapping[str, str]],
@@ -418,6 +509,8 @@ def merge(data_dir: Path, config: Mapping[str, Any]) -> list[str]:
 
     For each date, a file keeps the rows of the best source in ``[sources]`` that
     has that date, so a lower-ranked source only fills days the better ones miss.
+    Sleep and workouts go by time instead: a session is kept unless it overlaps one
+    from a better source.
     Transactions and life events, whose rows can repeat, keep every source's
     rows. A data file no source has staged rows for is left as it is.
 
@@ -462,16 +555,17 @@ def merge(data_dir: Path, config: Mapping[str, Any]) -> list[str]:
                 for source in ranking
             ]
             rows = [(source, rows) for source, (_, rows) in tables]
-            kept = (
-                ranked_by_date(rows)
-                if category.key
-                else [row for _, source_rows in rows for row in source_rows]
-            )
-            lines += [
-                f"{category.file}: {column} from {source} left out on "
-                f"{plural(days, 'day')}, when a higher-ranked source had the day"
-                for column, source, days in left_out_values(rows, kept)
-            ]
+            if category.grain is Grain.SESSION:
+                kept = ranked_by_time(rows)
+            elif category.key:
+                kept = ranked_by_date(rows)
+                lines += [
+                    f"{category.file}: {column} from {source} left out on "
+                    f"{plural(days, 'day')}, when a higher-ranked source had the day"
+                    for column, source, days in left_out_values(rows, kept)
+                ]
+            else:
+                kept = [row for _, source_rows in rows for row in source_rows]
             kept.sort(key=lambda row: row_order(category, row))
             columns = column_order(category, [header for _, (header, _) in tables])
             write_if_changed(data_dir / category.file, table_text(columns, kept))
