@@ -68,7 +68,9 @@ Versions follow [Semantic Versioning](https://semver.org) and are worked out fro
 - It doesn't commit. Review the changes, commit them as `chore(release): vX.Y.Z` and push to `main`.
 - Once CI passes on `main`, `.github/workflows/release.yml` tags that commit and publishes a GitHub release, with the changelog section as its notes. It runs only when no release exists yet for the version in `pyproject.toml`, so ordinary pushes publish nothing. Pre-releases are marked as such.
 - Each release page offers the source code as zip and tar.gz downloads.
-- `style` and `chore(release)` commits are left out of the changelog. Commits that don't follow Conventional Commits are left out too.
+- The changelog is for people who use dotlife. It lists `feat`, `fix`, `perf`, `docs` and `revert` commits only; `chore`, `ci`, `build`, `test`, `refactor` and `style` commits are left out, and so are commits that don't follow Conventional Commits, such as merges. Give a change users notice one of the listed types, and work on dotlife's own tooling or contributor docs another type or the `dev` scope (`docs(dev): ...`).
+- Never edit `CHANGELOG.md` by hand or commit changelog fixes: change the commit types or `cliff.toml`, and the next `make release` rewrites it.
+- Don't rewrite history below a release tag. If it happens, point the tag at the rewritten commit (`git tag -f vX.Y.Z <commit>`, then `git push --force origin vX.Y.Z`); otherwise git-cliff no longer sees the release and proposes the same version again.
 
 ## Python style
 
