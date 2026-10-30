@@ -102,6 +102,16 @@ class WatchWornTest(unittest.TestCase):
                 row = {"steps": steps, "sedentary_min": sedentary}
                 self.assertIs(watch_worn(row, NEW_YORK), worn)
 
+    def test_fallback_source(self):
+        """A fallback device's day is left out, however many steps it has."""
+        context = Context(
+            NEW_YORK.timezone, {**NEW_YORK.options, "fallback_sources": ["iphone"]}
+        )
+        row = {"steps": 5252, "sedentary_min": None, "source": "iphone"}
+        self.assertFalse(watch_worn(row, context))
+        self.assertTrue(watch_worn(row | {"source": "apple-watch"}, context))
+        self.assertTrue(watch_worn(row, NEW_YORK))
+
 
 class ContextTest(unittest.TestCase):
     """Categories are on unless config switches them off."""

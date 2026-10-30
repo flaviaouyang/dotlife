@@ -35,6 +35,8 @@ hidden_categories = []       # Trends categories left out
 [activity]
 watch_off_steps = 1000            # a day under both of these counts as "watch not worn"
 watch_off_sedentary_min = 480
+fallback_sources = []             # `source` values that only fill days the main device
+                                  # missed, e.g. ["iphone"] with a watch; left out of averages
 
 [fitness_markers]
 # Many watches only update VO2 max after an outdoor run with GPS.

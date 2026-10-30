@@ -63,6 +63,8 @@ For each source in turn, read its guide in `docs/sources/` from start to end. Mo
 
 A source's settings that a script needs (a file path, a location) go in `config.toml` in a table named after the source, e.g. `[apple-health]`. Weather's location is already in `[weather]`.
 
+If a device only fills the days the main one missed (a phone on days without the watch), list its `source` value in `fallback_sources` under `[activity]`, so those part-day rows stay out of averages. Never when it is their only device.
+
 If the source needs an export or a token the person doesn't have yet, walk them through getting it now, following the guide.
 
 ## 6. Write the scripts

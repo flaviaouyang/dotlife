@@ -122,7 +122,7 @@ Config section `[activity]`. `activity.csv`, one row per day, unique: `date`, ex
 
 - `active_min`: The source's own measure of active or exercise time, as it reports it (e.g. Apple's exercise minutes). `sources.md` names the measure.
 - `energy_kcal`: Total energy burned in the day: active plus resting.
-- Days the watch wasn't worn (few steps, little sedentary time) skip averages.
+- Days the watch wasn't worn, or a fallback device filled in, skip averages.
 
 ### Workouts
 

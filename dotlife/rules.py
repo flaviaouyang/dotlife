@@ -87,21 +87,26 @@ def currency_is_home(row: Row, context: Context) -> str | None:
 
 
 def watch_worn(row: Row, context: Context) -> bool:
-    """Days the watch wasn't worn (few steps, little sedentary time) skip averages.
+    """Days the watch wasn't worn, or a fallback device filled in, skip averages.
 
     A day with no steps recorded, or with few steps and little sedentary time, counts
     as not worn. Both are needed: few steps with no sedentary time recorded counts as
-    worn.
+    worn. A day whose ``source`` is one of ``fallback_sources`` (e.g. the phone, on
+    days without the watch) counts as not worn too: its row is kept, but it covers
+    only part of the day.
 
     Args:
-        row: A parsed activity row with ``steps`` and ``sedentary_min``.
-        context: Supplies ``watch_off_steps`` and ``watch_off_sedentary_min``.
+        row: A parsed activity row with ``steps``, ``sedentary_min`` and ``source``.
+        context: Supplies ``watch_off_steps``, ``watch_off_sedentary_min`` and
+            ``fallback_sources``.
 
     Returns:
         True if the day counts toward averages.
     """
     steps, sedentary = row["steps"], row["sedentary_min"]
-    if steps is None:
+    if steps is None or row.get("source") in context.options.get(
+        "fallback_sources", ()
+    ):
         return False
     return (
         steps >= context.options["watch_off_steps"]
