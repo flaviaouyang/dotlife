@@ -39,7 +39,7 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 - Follow `FORMAT.md` and the source's guide in `docs/sources/`. Running it twice must give the same files: re-read everything, or re-fetch a recent window and pass `window=(first, last)` so only those dates are replaced.
 - Keep its own settings in `config.toml`, in a table named after the source, e.g. `[apple-health]`.
 - Keep secrets (tokens, passwords) out of the repo: read them from the environment or the system keychain, and say where in `sources.md`.
-- Print a line or two about what it did, and exit 0 when it finished. On failure, print what went wrong in plain words and exit with any other code. A source that needs a manual step, like a new Apple Health export, finishes with a note when there's nothing new.
+- Print a line or two about what it did, and exit 0 when it finished. A source that waits on the person (no export yet, or the same one as last time) also exits 0, with a note saying what to do: nothing is wrong, the data just isn't newer. Exit with any other code only when something needs fixing or doing before the source works at all (an unreadable file, a unit it doesn't know, a sign-in that's missing or expired), and print what in plain words, so the person can act on the message alone.
 
 A step only an AI agent can do (a source reachable only through a connector, or AI inference) is listed with `agent = "prompts/<name>.md"`, the instructions the agent follows. `make fresh` lists it as left for your agent and doesn't run it; the `fetch` skill does it, then runs `make fresh`. The agent saves what it fetched or inferred as a file, exactly as it got it, and a script step stages rows from that file: the agent never edits data files itself.
 

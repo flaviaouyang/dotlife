@@ -86,6 +86,15 @@ The app's "Shareable Reports" (menu, then "Reports", then "Shareable Reports") a
 
 The API agreement defines an "MCP Server" that Oura operates to give AI tools controlled access to user data ([API Agreement](https://cloud.ouraring.com/legal/api-agreement)), but no public address, setup page or listing for it was found on Oura's developer portal, API docs or help centre. Unverified: whether it is available to individual members. Many community MCP servers wrap the API; they are not from Oura, and the agreement's AI clause applies to them. Since the API can be scripted, a connector is not needed for dotlife.
 
+## Choices to make
+
+Settle these with the person before writing the script, and write the answers in `sources.md` under an "Oura" heading. The ones the script reads go under `[oura]` in `config.toml`.
+
+- **Which categories.** Oura can fill sleep, activity, heart, vitals, fitness markers, workouts and mindfulness (see "What it fills"). With a watch too, decide per category which wins, and rank them in `[sources]`.
+- **Signing in.** Oura has no personal tokens any more, so the person creates an "API application" on Oura's developer site and signs in once through a browser. Use those words with them, not "token". Keep the client secret and the refresh token in the system keychain: the refresh token changes on every refresh, so an environment variable set by hand would go stale after one run.
+- **Scope.** `daily` ("Daily summaries of sleep, activity and readiness", [Authentication](https://cloud.ouraring.com/docs/authentication)) plus any other scope a chosen category needs. Unverified: whether `daily` also covers the sleep periods endpoint; leaving `scope` out asks for every scope and avoids the question.
+- **How far back.** The first run fetches from a start date they choose, in 1 to 3 month chunks as Oura suggests; later runs fetch the last week.
+
 ## Mapping to the format
 
 **Oura's `day` field.** Every document has a `day` (`YYYY-MM-DD`), "Day that the sleep belongs to" for sleep, and the like for others ([OpenAPI spec](https://cloud.ouraring.com/v2/static/json/openapi-1.43.json)). Oura's sleep day turns over at 6 pm: a `late_nap` is a nap that "ended after sleep day change (6 pm), contributes to next days daily scores" ([OpenAPI spec](https://cloud.ouraring.com/v2/static/json/openapi-1.43.json); see also [Nap Detection](https://support.ouraring.com/hc/articles/1500009653181)). So a night's `day` is normally the morning you woke up, which matches dotlife. Still compute `date` yourself as the local date of `bedtime_end` in the `config.toml` time zone, which is dotlife's rule, and use `day` only as a cross-check.

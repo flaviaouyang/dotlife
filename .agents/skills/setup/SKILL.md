@@ -104,7 +104,7 @@ if __name__ == "__main__":
 - Round sums to a sensible precision (whole steps, minutes and metres) so floats don't leave long tails.
 - A source read in full (an export) stages every row each run. An API re-fetches a recent window and passes `window=(first, last)`; on the first run, it fetches from the start date the person chose.
 - A large file is streamed, never loaded whole.
-- On failure, print what went wrong and what to do in plain words, and return 1. A source with a manual step that finds nothing new says so and returns 0.
+- A source waiting on the person (no export yet, or the same one as last time) prints what to do and returns 0. When something must be fixed or done first (an unreadable file, an unknown unit, a missing or expired sign-in), print what in plain words and return 1.
 - Write it plainly, with a docstring per function, so the person or the maintain skill can follow it later.
 
 Add each script to the end of `config.toml`, sources first and any inference rule after the source it reads:
