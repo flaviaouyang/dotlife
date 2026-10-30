@@ -179,7 +179,8 @@ class FreshRunTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("following prompts/mood.md", output.getvalue())
         self.assertIn(
-            "0 of 0 steps finished; 1 left for your agent: mood.", output.getvalue()
+            "0 of 0 steps finished; 1 for your agent's fetch skill: mood.",
+            output.getvalue(),
         )
 
     def test_invalid_data_fails_the_run(self):

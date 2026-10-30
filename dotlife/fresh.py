@@ -165,7 +165,7 @@ def summary(outcomes: Sequence[Outcome], report: Report) -> str:
     if failed:
         steps += f"; {len(failed)} failed: {', '.join(failed)}"
     if left:
-        steps += f"; {len(left)} left for your agent: {', '.join(left)}"
+        steps += f"; {len(left)} for your agent's fetch skill: {', '.join(left)}"
     errors = report.error_count
     return f"{steps}. Validation: {errors} {'error' if errors == 1 else 'errors'}."
 
@@ -215,7 +215,8 @@ def run_fresh(
             print(f"{step.name}:")
             if step.needs_agent:
                 note = (
-                    f"left for your agent (fetch skill), following {step.instructions}"
+                    "not run here: your agent's fetch skill does it, following "
+                    f"{step.instructions}"
                 )
                 print(f"  {note}")
                 log.write(f"\n== {step.name}: {note}\n")
