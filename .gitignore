@@ -20,3 +20,6 @@ dev/
 
 # Log of the last make fresh
 .dotlife/
+
+# Exports waiting for a source script, e.g. Apple Health's export.zip; never committed
+inbox/

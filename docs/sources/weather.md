@@ -85,7 +85,7 @@ date,source,temp_mean_c,daylight_h,precipitation_mm
 2026-03-03,open-meteo,5.9,10.71,0
 ```
 
-The script goes in `config.toml` as a `[[fresh.steps]]` entry with `script = "scripts/weather.py"`, reads `DOTLIFE_CONFIG` for `timezone` and `[weather]`, writes `weather.csv` in `DOTLIFE_DATA`, and uses only `urllib.request`, `json`, `csv` and `tomllib` from the standard library (see [AGENTS.md](../../AGENTS.md#writing-a-source-script)).
+The script goes in `config.toml` as a `[[fresh.steps]]` entry with `script = "scripts/weather.py"`. It reads `timezone` and `[weather]` from `from_env().config`, stages its rows with `staging.write("open-meteo", "weather", rows, window=(first, last))`, and needs only `urllib.request` and `json` from the standard library (see [AGENTS.md](../../AGENTS.md#writing-a-source-script)).
 
 ## Watch out for
 

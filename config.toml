@@ -53,10 +53,11 @@ tag_symbols = "#@"                # words starting with these are tags
 home_currency = "EUR"             # ISO 4217; other currencies are flagged, not converted
 budgets = {}                      # monthly, in home_currency, e.g. { groceries = 400 }
 
-# Source scripts `make fresh` runs, in order, from this folder. Each gets
-# DOTLIFE_CONFIG and DOTLIFE_DATA; exit code 0 means it finished. A script is a
-# .py file run with dotlife's Python; a command is anything else; an agent step
-# names the instructions your AI agent follows (its fetch skill runs those).
+# Source scripts `make fresh` runs, in order, from this folder. Each stages its
+# rows in data/sources/<source>/, and make fresh merges them into data/ by the
+# ranking in [sources]; exit code 0 means it finished. A script is a .py file
+# run with dotlife's Python; a command is anything else; an agent step names
+# the instructions your AI agent follows (its fetch skill runs those).
 # [[fresh.steps]]
 # name = "oura"
 # script = "scripts/oura.py"

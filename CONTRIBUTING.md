@@ -24,9 +24,9 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
   - `setup.py`: `dotlife setup`: the questionnaire, and `--answers` for agents; both write `config.toml` and the start of `sources.md` with the same code.
   - `terminal.py`: the questionnaire's arrow-key menus (standard library: `termios` or `msvcrt`), with numbered prompts when input isn't a terminal. Colour honours `NO_COLOR`.
-  - `fresh.py`: `dotlife fresh`, which runs the person's source scripts listed in `config.toml`, then validates.
+  - `fresh.py`: `dotlife fresh`, which runs the person's source scripts listed in `config.toml`, merges what they staged, then validates.
+  - `staging.py`: what source scripts import: `from_env()`, `Staging.wants` and `Staging.write`, which stage rows in `data/sources/<source>/`. Also the merge that builds each data file from them, by the ranking in `[sources]`.
   - `cli.py` and `__main__.py`: the `dotlife` command.
-  - `sources/`: the importers.
   - `dashboard/`: the Streamlit app (`make dashboard`). Use the `developing-with-streamlit` skill when changing it, and keep logic out of the page scripts:
     - `app.py`: entry point, sidebar (period, period picker, "Show sensitive", sample notice) and `st.navigation`.
     - `app_pages/`: Overview, Trends, Reflections, Data health. Plain scripts that only lay things out.

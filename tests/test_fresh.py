@@ -15,6 +15,14 @@ data = Path(os.environ["DOTLIFE_DATA"])
 (data / "mood.csv").write_text("date,source,mood\\n2026-01-05,app,4\\n")
 print("wrote mood.csv")
 """
+STAGE_MOOD = """\
+from datetime import date
+
+from dotlife.staging import from_env
+
+staging = from_env()
+staging.write("{source}", "mood", [{{"date": date(2026, 1, {day}), "mood": {mood}}}])
+"""
 FAIL = 'import sys\nprint("token expired")\nsys.exit(3)\n'
 WRITE_BAD_MOOD = """\
 import os
@@ -117,6 +125,36 @@ class FreshRunTest(unittest.TestCase):
         self.assertIn("1 of 1 steps finished. Validation: 0 errors.", output)
         log = (self.root / LOG_FILE).read_text(encoding="utf-8")
         self.assertIn("wrote mood.csv", log)
+
+    def test_staged_rows_are_merged_by_rank(self):
+        """Scripts stage rows per source; the run merges them into data/."""
+        scripts = {
+            "notes": STAGE_MOOD.format(source="notes", day=5, mood=4),
+            "inferred": STAGE_MOOD.format(source="inferred-reflections", day=6, mood=2),
+        }
+        for name, source in scripts.items():
+            (self.root / "scripts" / f"{name}.py").write_text(source, encoding="utf-8")
+        config = self.root / "config.toml"
+        config.write_text(
+            'format_version = 1\ntimezone = "UTC"\ntrack = ["mood"]\n\n'
+            '[sources]\nmood = ["notes", "inferred-reflections"]\n\n'
+            + "\n".join(
+                f'[[fresh.steps]]\nname = "{name}"\nscript = "scripts/{name}.py"\n'
+                for name in scripts
+            ),
+            encoding="utf-8",
+        )
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            code = main(["fresh", "--config", str(config)])
+        self.assertEqual(code, 0, output.getvalue())
+        self.assertIn(
+            "mood.csv: 2 rows from notes, inferred-reflections", output.getvalue()
+        )
+        self.assertEqual(
+            (self.root / "data" / "mood.csv").read_text(encoding="utf-8"),
+            "date,source,mood\n2026-01-05,notes,4\n2026-01-06,inferred-reflections,2\n",
+        )
 
     def test_a_failed_step_does_not_stop_the_others(self):
         """Every step runs; the failure is named and the exit code is 1."""

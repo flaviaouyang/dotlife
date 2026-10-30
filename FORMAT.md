@@ -38,7 +38,9 @@ Format version 1, set as `format_version` in `config.toml`. This file is the sou
 ## One value per metric
 
 - Each file has at most one row per value of its unique columns (e.g. one row per `date`). The validator reports duplicates.
-- `source` says where a row came from (e.g. `watch`, `scale`, `manual`). When two sources report the same metric, keep the one `sources.md` ranks higher. Weight is the exception: a smart-scale reading wins on any day it has one.
+- `source` says where a row came from (e.g. `watch`, `scale`, `manual`).
+- Each source's rows are kept apart, in `sources/<source>/` inside the data folder, with the same file names and columns, e.g. `data/sources/oura/sleep.csv`. The folder is named after the source in `[sources]`; the `source` column inside can be more specific, e.g. `apple-watch` rows in `sources/apple-health/`. `make fresh` builds each data file from them: for each date, it keeps the rows of the source ranked highest in `[sources]` in `config.toml` that has that date. So a smart scale ranked first wins weight on any day it has a reading, and a watch ranked over a phone fills the days the watch was worn. Transactions and life events keep every source's rows.
+- Rows entered by hand go in `sources/manual/`, with `manual` listed in `[sources]`. A data file that no source has rows for is never rebuilt, so it can be kept by hand.
 - Record a reading only when the source reports a new one. If a device keeps repeating an old value, don't write it again.
 
 ## Inferred values

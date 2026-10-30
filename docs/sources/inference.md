@@ -24,7 +24,7 @@ Dining out has no column of its own, so it's a [custom metric](../../FORMAT.md#c
 
 ### By rule
 
-Write a script that reads the input file in the data folder (it's in `DOTLIFE_DATA`), applies the rule, and writes the metric's file with `source` set to `inferred-<input>`, e.g. `inferred-finances`. List it in `config.toml` after the step that fills its input, so it reads fresh data:
+Write a script that reads the input file in the data folder (`from_env().data_dir`), applies the rule, and stages the metric's rows as the source `inferred-<input>`, e.g. `staging.write("inferred-finances", "dining_out", rows)`. List it in `config.toml` after the step that fills its input, so it reads fresh data:
 
 ```toml
 [[fresh.steps]]
@@ -51,7 +51,7 @@ The agent's part runs in the `fetch` skill, never in `make fresh`. It takes thre
    ```
 
 2. **Answers**, e.g. `inferred/mood.csv`: the agent writes one row per day it answered, with `date`, the value, and `evidence`, a few words on why (not a copy of the text). It is the record of what the AI said, so keep it in the repo.
-3. **A script**, e.g. `scripts/mood_inferred.py`, that maps the answers into `mood.csv` with `source` set to `inferred-reflections`. It skips days that already have a recorded value or an inferred one, and values outside the format's limits.
+3. **A script**, e.g. `scripts/mood_inferred.py`, that stages every answer as the source `inferred-reflections`: `staging.write("inferred-reflections", "mood", rows)`. It skips values outside the format's limits.
 
 List the agent's part and the script in `config.toml`, in that order:
 
@@ -71,7 +71,7 @@ script = "scripts/mood_inferred.py"
 
 - **Source.** `inferred-<input>`, naming the file or folder it came from: `inferred-reflections`, `inferred-finances`. The validator rejects a bare `inferred`.
 - **Dates.** A value belongs to the day of its input: a reflection's local date, a transaction's `date`.
-- **Recorded wins.** Before writing a day, check the metric's file. If a recorded value exists, leave it; if one arrives later from another source, it replaces the inferred one.
+- **Recorded wins.** List the inferred source last in `[sources]`, e.g. `mood = ["obsidian-daily-notes", "inferred-reflections"]`. `make fresh` then uses an inferred row only on days no recorded source has, and a recorded value that arrives later replaces it.
 - **Written once.** A day already inferred is left as it is, so changing models or instructions doesn't rewrite the past. To redo a range, the person asks for it, and `sources.md` notes when and why.
 - **Empty without evidence.** A day the input doesn't speak to gets no row, not a middle value.
 - **Same scale.** Use the format's scale (mood 1 to 5) in the instructions, so inferred and recorded values can share a chart.

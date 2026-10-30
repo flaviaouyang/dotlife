@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data
+from dotlife.staging import merge
 from dotlife.validate import Report, format_text, validate_folder
 
 LOG_FILE = Path(".dotlife") / "fresh.log"
@@ -169,10 +170,26 @@ def summary(outcomes: Sequence[Outcome], report: Report) -> str:
     return f"{steps}. Validation: {errors} {'error' if errors == 1 else 'errors'}."
 
 
+def merge_staged(data: Path, config: Mapping[str, Any]) -> list[str]:
+    """Merge what the steps staged into the data files, so later steps read them.
+
+    Args:
+        data: The data folder.
+        config: The whole of config.toml.
+
+    Returns:
+        What was merged, or why the merge was skipped.
+    """
+    try:
+        return merge(data, config)
+    except ValueError as error:
+        return [f"skipped: {error}"]
+
+
 def run_fresh(
     config_path: Path, config: Mapping[str, Any], steps: Sequence[Step]
 ) -> int:
-    """Run the steps in order, then validate the data folder.
+    """Run the steps in order, merging what each staged, then validate the data folder.
 
     Every step runs even when one fails, since sources don't depend on each other.
     Steps that need an AI agent are listed, not run: the fetch skill does them.
@@ -210,6 +227,14 @@ def run_fresh(
                 print(f"  failed (exit code {outcome.exit_code})")
                 log.write(f"failed (exit code {outcome.exit_code})\n")
             outcomes.append(outcome)
+            merge_staged(data, config)
+        merged = merge_staged(data, config)
+        if merged:
+            print("merge:")
+            log.write("\n== merge\n")
+        for line in merged:
+            print(f"  {line}")
+            log.write(f"{line}\n")
         source = find_data(config_path)
         report = validate_folder(source.folder, source.config)
         text = format_text(report)
