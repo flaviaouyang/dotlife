@@ -33,7 +33,7 @@ This repo holds one person's life data in the dotlife format: plain CSV and Mark
 
 `make fresh` runs `dotlife fresh`, which runs each script listed under `[[fresh.steps]]` in `config.toml`, in order, merges what it staged into the data files, then runs the validator. A script must:
 
-- Be listed with a `name` and either `script = "scripts/<name>.py"` (run with dotlife's Python: the standard library plus `dotlife.staging`) or `command = [...]` for anything else, e.g. a Swift script for Apple Calendar. It runs in the folder holding `config.toml`.
+- Be listed with a `name` and either `script = "scripts/<name>.py"` (run with dotlife's Python: the standard library plus `dotlife.staging`) or `command = [...]` for anything else, e.g. a Swift script for Apple Calendar. It runs in the folder holding `config.toml`, so paths like `inferred/mood.csv` are relative to it.
 - Stage its rows, never write the data files. In Python, `staging = from_env()` (from `dotlife.staging`) reads the settings; `staging.wants(source, category)` says whether to fill a category, and `staging.write(source, category, rows)` saves rows to `data/sources/<source>/<file>`. A row is a dict of column to value: a number, a `date`, a `datetime` with its time zone, text, or None for missing. A `command` writes the same files itself, finding the data folder in `DOTLIFE_DATA` and the settings in `DOTLIFE_CONFIG`.
 - Use the source's name in `[sources]` (e.g. `apple-health`) as its folder. The `source` column can say more, e.g. `apple-watch` or `iphone`.
 - Follow `FORMAT.md` and the source's guide in `docs/sources/`. Running it twice must give the same files: re-read everything, or re-fetch a recent window and pass `window=(first, last)` so only those dates are replaced.

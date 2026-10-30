@@ -38,11 +38,12 @@ For adding or stopping a source, reordering sources, or switching a category on 
 Then, for each kind of change:
 
 - **Add a source.** As in the setup skill, steps 5 and 6: read its guide, settle its choices with the person, add its section to `sources.md`, write `scripts/<source>.py` with `dotlife.staging`, and add its `[[fresh.steps]]` entry. Existing scripts stay as they are: `make fresh` merges by the new ranking.
+- **Add inference** (`inferred-<input>`). Follow `docs/sources/inference.md`: a rule is a script; reading text is an agent step `prompts/<metric>.md` that saves answers to `inferred/<metric>.csv`, followed by a script `scripts/<metric>_inferred.py` that stages them. Write the instructions with the person, record their consent to sending the input to their agent's model provider in `sources.md`, and keep the inferred source last in `[sources]`.
 - **Add hand entries** (`manual`). No script or step: follow `docs/sources/manual.md`. Values the person gives you go into `data/sources/manual/<file>` exactly as given; never fill in days they didn't give.
 - **Change a device**, e.g. from a Fitbit to an Apple Watch. Add the new source first in `[sources]` and keep the old one after it, so past days keep its rows. Remove the old source's step from `[[fresh.steps]]`, so nothing fetches it any more, but keep its staged rows. If one device only fills days the other missed (a phone without the watch), list it in `fallback_sources` under `[activity]`.
 - **Stop a source.** Ask whether to keep its past rows. To keep them, remove only its `[[fresh.steps]]` entry and say in `sources.md` that it stopped and when. To drop them, also take it out of `[sources]`: where other sources remain, its rows leave the data files on the next run. Where it was a category's only source, the merge no longer touches that data file, so delete the file too if they want those rows gone. Delete `data/sources/<source>/` only when they confirm, since an API that has forgotten the old days can't rebuild it.
 - **Switch a category off.** Leave its staged rows and its data file alone unless they ask to delete them; a switched-off category is hidden and skipped, not erased.
-- **Switch a category on.** Check that a source in `[sources]` fills it, and that its script stages it; `staging.wants` turns true for it now.
+- **Switch a category on.** Check that a source in `[sources]` fills it, and that its script stages it; `staging.wants` turns true for it now. A sensitive category stays hidden in the dashboard until they switch on "Show sensitive"; tell them.
 
 ## Averages look wrong on days without the main device
 

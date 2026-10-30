@@ -42,16 +42,23 @@ For dining out:
 
 The agent's part runs in the `fetch` skill, never in `make fresh`. It takes three files in the repo:
 
-1. **Instructions**, e.g. `prompts/mood.md`: the question, the scale and what counts as evidence. Write them with the person and keep them short. For mood:
+1. **Instructions**, e.g. `prompts/mood.md`: what it fills, what to read, the question with its scale, what counts as evidence, and where to save the answers. Write them with the person and keep them short. Anchor every point of the scale, so different models and runs split days the same way. For mood:
 
    ```markdown
-   For each date listed, read that day's reflections and rate the mood they
-   describe from 1 (very low) to 5 (very good). Use only what is written. If the
-   entries say nothing about mood, give no rating for that day.
+   Fills: mood.mood (the mood category), from reflections.
+
+   Read: data/reflections/<year>.txt, one finished day at a time.
+
+   Question: rate the mood that day's entries describe:
+   1 very low, 2 low, 3 neutral or mixed, 4 good, 5 very good.
+   Use only what is written that day. If the entries say nothing about mood,
+   give no rating.
+
+   Save: inferred/mood.csv, columns date, mood, evidence.
    ```
 
-2. **Answers**, e.g. `inferred/mood.csv`: the agent writes one row per day it answered, with `date`, the value, and `evidence`, a few words on why (not a copy of the text). It is the record of what the AI said, so keep it in the repo.
-3. **A script**, e.g. `scripts/mood_inferred.py`, that stages every answer as the source `inferred-reflections`: `staging.write("inferred-reflections", "mood", rows)`. It skips values outside the format's limits.
+2. **Answers**, e.g. `inferred/mood.csv`: the agent writes one row per day it was asked about, with `date`, the value, and `evidence`, a few words on why (not a copy of the text). A day the input says nothing about gets a row too, with the value empty, so it isn't asked again. It is the record of what the AI said, so keep it in the repo.
+3. **A script**, e.g. `scripts/mood_inferred.py`, that reads the answers file (paths like `inferred/mood.csv` are relative to the folder holding `config.toml`, where scripts run) and stages every answer with a value as the source `inferred-reflections`: `staging.write("inferred-reflections", "mood", rows)`. It skips empty values and values outside the format's limits.
 
 List the agent's part and the script in `config.toml`, in that order:
 
@@ -65,7 +72,7 @@ name = "mood-inferred"
 script = "scripts/mood_inferred.py"
 ```
 
-`make fresh` runs the script and lists the agent step as left for your agent. The `fetch` skill does the agent step, then runs `make fresh`. The agent only answers days with input and no value yet, and only writes to `inferred/`, never to the data files.
+`make fresh` runs the script and names the agent step as one for your agent's fetch skill; it always does, whether or not there are days left to answer. The `fetch` skill does the agent step, then runs `make fresh`. The agent only answers finished days (before today) with input that are neither in the answers file nor recorded by another source, and only writes to `inferred/`, never to the data files.
 
 ## Mapping to the format
 
@@ -73,7 +80,7 @@ script = "scripts/mood_inferred.py"
 - **Dates.** A value belongs to the day of its input: a reflection's local date, a transaction's `date`.
 - **Recorded wins.** List the inferred source last in `[sources]`, e.g. `mood = ["obsidian-daily-notes", "inferred-reflections"]`. `make fresh` then uses an inferred row only on days no recorded source has, and a recorded value that arrives later replaces it.
 - **Written once.** A day already inferred is left as it is, so changing models or instructions doesn't rewrite the past. To redo a range, the person asks for it, and `sources.md` notes when and why.
-- **Empty without evidence.** A day the input doesn't speak to gets no row, not a middle value.
+- **Empty without evidence.** A day the input doesn't speak to gets no value in the data file, not a middle value. Its row in the answers file has the value empty, which records that it was asked.
 - **Same scale.** Use the format's scale (mood 1 to 5) in the instructions, so inferred and recorded values can share a chart.
 
 ## Watch out for
