@@ -35,6 +35,7 @@ pinned_cards = sorted(
 if pinned_cards:
     st.subheader("Pinned")
     show_grid(pinned_cards, chosen, "pinned", arrangement)
+    st.divider()
 
 for area in AREAS:
     cards = [card for card in overview.cards if card.area == area]
