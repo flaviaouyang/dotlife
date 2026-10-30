@@ -1,5 +1,10 @@
 from pathlib import Path
 
+# dotlife doesn't use pandas, but Streamlit loads it on first use (st.dataframe on
+# Data health) inside a page's thread, while Altair picks it up from sys.modules in
+# another. Clicking to another page during that first, slow import showed
+# "partially initialized module 'pandas'" errors, so load it once at start-up.
+import pandas  # noqa: F401
 import streamlit as st
 from starlette.requests import Request
 from starlette.responses import FileResponse
