@@ -7,6 +7,7 @@ from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import tomlkit
+from tomlkit.items import Table
 
 from dotlife.categories import AREA_OF, AREAS, CATEGORIES
 from dotlife.terminal import Option, Prompter
@@ -1098,11 +1099,7 @@ def apply_answers(document: tomlkit.TOMLDocument, answers: Answers) -> None:
     document["display"]["glucose"] = answers.glucose
     document.setdefault("dashboard", tomlkit.table())
     document["dashboard"]["period"] = answers.period
-    sources = document.setdefault("sources", tomlkit.table())
-    for name in list(sources):
-        del sources[name]
-    for name, values in answers.sources.items():
-        sources[name] = list(values)
+    replace_sources(document.setdefault("sources", tomlkit.table()), answers.sources)
     if "finances" in answers.track:
         document.setdefault("finances", tomlkit.table())
         document["finances"]["home_currency"] = answers.home_currency
@@ -1123,6 +1120,25 @@ def apply_answers(document: tomlkit.TOMLDocument, answers: Answers) -> None:
         document.setdefault("custom", tomlkit.table(is_super_table=True))
         if DINING_OUT not in document["custom"]:
             document["custom"][DINING_OUT] = DINING_OUT_METRIC
+
+
+def replace_sources(table: Table, sources: Mapping[str, Sequence[str]]) -> None:
+    """Put new keys in ``[sources]``, ahead of the comments that follow the old ones.
+
+    Comments after the last key belong to the next table (e.g. the comment above
+    ``[apple-health]``), so the new keys go before them, not after.
+
+    Args:
+        table: The ``[sources]`` table, changed in place.
+        sources: Per category, its sources, best first.
+    """
+    for name in list(table):
+        del table[name]
+    for index, (name, values) in enumerate(sources.items()):
+        if index < len(table.value.body):
+            table.value._insert_at(index, name, tomlkit.item(list(values)))
+        else:
+            table[name] = list(values)
 
 
 def guide_link(value: str) -> str:

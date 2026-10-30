@@ -350,6 +350,35 @@ class SourcesFileTest(unittest.TestCase):
         self.assertNotIn("old", text)
         self.assertIn("Token in the keychain.", text)
 
+    def test_comments_after_sources_stay_put(self):
+        """A comment above the table after [sources] stays above that table."""
+        with tempfile.TemporaryDirectory() as folder:
+            config = Path(folder) / "config.toml"
+            config.write_text(
+                'format_version = 1\ntimezone = "UTC"\n\n[sources]\n'
+                'sleep = ["apple-health"]\n\n# Apple Health settings\n'
+                '[apple-health]\nexport = "inbox/export.zip"\n',
+                encoding="utf-8",
+            )
+            answers = Path(folder) / "answers.json"
+            answers.write_text(
+                json.dumps(
+                    {
+                        "track": ["sleep", "mood"],
+                        "sources": {
+                            "sleep": ["oura", "apple-health"],
+                            "mood": ["manual"],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            run_answers(config, answers)
+            text = config.read_text(encoding="utf-8")
+        self.assertIn(
+            'mood = ["manual"]\n\n# Apple Health settings\n[apple-health]\n', text
+        )
+
     def test_example_matches_setup(self):
         """sources.example.md's setup block is what dotlife setup writes for Alice."""
         apple = ["apple-health"]
