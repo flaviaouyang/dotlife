@@ -1,11 +1,13 @@
 import re
 from itertools import groupby
+from math import ceil
 
 import streamlit as st
 
 from dotlife.dashboard.data import dataset, selection
 
 MARKDOWN_SPECIALS = re.compile(r"([\\`*_{}\[\]()#+\-.!|<>$~:])")
+PAGE_SIZE = 20
 
 
 def literal(text: str) -> str:
@@ -41,6 +43,52 @@ def highlighted(text: str, words: list[str]) -> str:
         ]
         start = match.end()
     return "".join(parts) + literal(text[start:])
+
+
+def turn_page(page: int) -> None:
+    """Show another page of entries.
+
+    Args:
+        page: The page to show, counting from 0.
+    """
+    st.session_state.reflections_page = page
+
+
+def pager(page: int, pages: int, shown: int, place: str) -> None:
+    """Show buttons for newer and older entries, when there is more than a page.
+
+    Args:
+        page: The page shown, counting from 0.
+        pages: How many pages there are.
+        shown: How many entries this page shows.
+        place: Where the buttons sit ("top" or "bottom"), to keep their keys apart.
+    """
+    if pages == 1:
+        return
+    first = page * PAGE_SIZE + 1
+    with st.container(
+        horizontal=True, horizontal_alignment="center", vertical_alignment="center"
+    ):
+        st.button(
+            "Newer",
+            icon=":material/chevron_left:",
+            disabled=page == 0,
+            on_click=turn_page,
+            args=(page - 1,),
+            key=f"newer_{place}",
+        )
+        st.caption(
+            f"Page {page + 1} of {pages}: entries {first} to {first + shown - 1}",
+            width="content",
+        )
+        st.button(
+            "Older",
+            icon=":material/chevron_right:",
+            disabled=page == pages - 1,
+            on_click=turn_page,
+            args=(page + 1,),
+            key=f"older_{place}",
+        )
 
 
 data = dataset()
@@ -84,19 +132,25 @@ else:
         and all(word in reflection.text.lower() for word in words)
         and set(picked) <= set(reflection.tags)
     ]
-    days = [
-        (day, list(group))
-        for day, group in groupby(reversed(hits), key=lambda r: r.day)
-    ]
+    pages = max(1, ceil(len(hits) / PAGE_SIZE))
+    filters = (tuple(words), start, end, tuple(picked))
+    if st.session_state.get("reflections_filters") != filters:
+        st.session_state.reflections_filters = filters
+        st.session_state.reflections_page = 0
+    page = min(st.session_state.reflections_page, pages - 1)
+    shown = hits[::-1][page * PAGE_SIZE : (page + 1) * PAGE_SIZE]
+    days = {reflection.day for reflection in hits}
     st.caption(
         f"{len(hits)} of {len(data.reflections)} entries, on {len(days)} "
         f"{'day' if len(days) == 1 else 'days'}. "
         "Every word must match; case is ignored."
     )
-    for day, reflections in days:
+    pager(page, pages, len(shown), "top")
+    for day, group in groupby(shown, key=lambda r: r.day):
         st.subheader(f"{day:%A, %b} {day.day}, {day.year}", divider="gray")
-        for reflection in sorted(reflections, key=lambda r: r.time):
+        for reflection in sorted(group, key=lambda r: r.time):
             with st.container(border=True):
                 star = " :material/star:" if reflection.starred else ""
                 st.caption(f"{reflection.time:%H:%M}{star}")
                 st.markdown(highlighted(reflection.text, words))
+    pager(page, pages, len(shown), "bottom")

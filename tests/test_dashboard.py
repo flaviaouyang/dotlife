@@ -74,6 +74,22 @@ class DashboardSmokeTest(unittest.TestCase):
         self.assertEqual(app.session_state["start"], date(2026, 8, 1))
         self.assertGreater(len(app.metric), 20)
 
+    def test_reflections_pages(self):
+        """Reflections show 20 entries a page, newest first, with buttons for more."""
+        app = AppTest.from_file(str(APP), default_timeout=30).run()
+        app.toggle(key="show_sensitive").set_value(True).run()
+        app.switch_page("app_pages/reflections.py").run()
+        captions = [caption.value for caption in app.caption]
+        self.assertIn("Page 1 of", " ".join(captions))
+        self.assertTrue(app.button(key="newer_top").disabled)
+        app.button(key="older_top").click().run()
+        captions = [caption.value for caption in app.caption]
+        self.assertIn("entries 21 to 40", " ".join(captions))
+        app.text_input[0].set_value("walk").run()
+        captions = " ".join(caption.value for caption in app.caption)
+        self.assertNotIn("Page", captions)
+        self.assertTrue(captions.startswith("8 of 159 entries"))
+
     def test_only_activity_and_sleep(self):
         """A folder with just two files still gives a working dashboard."""
         with tempfile.TemporaryDirectory() as folder:
