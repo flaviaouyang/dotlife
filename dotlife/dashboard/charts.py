@@ -1,3 +1,4 @@
+from collections import defaultdict
 from collections.abc import Sequence
 from datetime import date, datetime, timedelta
 from typing import cast
@@ -5,9 +6,9 @@ from typing import cast
 import altair as alt
 import polars as pl
 
-from dotlife.dashboard.cards import CardChart, ChartKind
+from dotlife.dashboard.cards import CardChart, ChartKind, Trend, TrendKind
 from dotlife.dashboard.display import CLOCK, format_value
-from dotlife.summaries import UNRECORDED_FLOW, UsualRange
+from dotlife.summaries import UNRECORDED_FLOW
 
 EVENING_MINUTES = 18 * 60
 CLOCK_LABEL = (
@@ -37,88 +38,526 @@ def axis_for(unit: str, title: str) -> alt.Axis:
     return alt.Axis(title=title)
 
 
-def trend_chart(
-    points: Sequence[tuple[date, float]],
-    unit: str,
-    usual: UsualRange | None,
-    events: Sequence[tuple[date, str]],
-    goals: Sequence[tuple[date, float]] = (),
-) -> alt.LayerChart:
-    """Draw a metric's period values with its usual range and life events.
+TREND_HEIGHT = 240
+BAR_INSET = 0.12
+WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+RATING_RAMPS = {
+    True: ("#BFDBFE", "#1D4ED8"),
+    False: ("#FED7AA", "#C2410C"),
+    None: ("#D4D4D8", "#3F3F46"),
+}
+ALT_TEXT = {
+    TrendKind.TOTALS: "bars of each period's total",
+    TrendKind.DAYS: "each day as a dot, with each period's average as a line",
+    TrendKind.CALENDAR: "a calendar with each day shaded by its rating",
+    TrendKind.READINGS: "a line stepping from one reading to the next",
+    TrendKind.MATRIX: "a square per item and period, shaded by days done",
+    TrendKind.STACK: "stacked bars of each part, per period",
+    TrendKind.RANGE: "a bar from the low to the high value, per period",
+}
+
+
+def period_name(start: date, end: date) -> str:
+    """Name a period for tooltips.
 
     Args:
-        points: (period start, value) pairs, oldest first.
-        unit: The display unit, for axis labels.
-        usual: The usual range for the latest period, drawn as a band, or None.
-        events: (date, label) life events inside the chart's range.
-        goals: (period start, target) pairs drawn as a dashed goal line, if any.
+        start: Its first day.
+        end: The day after its last.
 
     Returns:
-        A layered Altair chart.
+        E.g. "Week of 24 Aug 2026" or "August 2026".
     """
-    frame = pl.DataFrame(
-        {"period": [day for day, _ in points], "value": [value for _, value in points]}
+    if (end - start).days <= 7:
+        return f"Week of {start.day} {start:%b %Y}"
+    return f"{start:%B %Y}"
+
+
+def inset(start: date, end: date) -> tuple[datetime, datetime]:
+    """Narrow a period to a bar, leaving a gap on each side.
+
+    Args:
+        start: The period's first day.
+        end: The day after its last.
+
+    Returns:
+        The bar's left and right edges.
+    """
+    gap = (end - start) * BAR_INSET
+    left = datetime.combine(start, datetime.min.time())
+    return left + gap, left + (end - start) - gap
+
+
+def middle(start: date, end: date) -> datetime:
+    """Return the middle of a period, where its average sits among its days.
+
+    Args:
+        start: The period's first day.
+        end: The day after its last.
+
+    Returns:
+        The moment halfway through.
+    """
+    return datetime.combine(start, datetime.min.time()) + (end - start) / 2
+
+
+def time_axis(trend: Trend) -> alt.X:
+    """Build the shared x axis, so every chart on the page lines up.
+
+    Args:
+        trend: The chart's content.
+
+    Returns:
+        A time axis from the first day shown to the end of the selected period.
+    """
+    return alt.X(
+        "x:T",
+        title=None,
+        axis=alt.Axis(
+            format="%b %Y",
+            labelAngle=0,
+            grid=False,
+            tickCount=alt.TimeIntervalStep(interval="month", step=1),
+        ),
+        scale=alt.Scale(domain=[trend.first.isoformat(), trend.end.isoformat()]),
     )
-    x = alt.X("period:T", title=None, axis=alt.Axis(format="%b %Y", labelAngle=0))
-    y = alt.Y(
-        "value:Q", title=None, axis=axis_for(unit, ""), scale=alt.Scale(zero=False)
-    )
-    line = (
-        alt.Chart(frame)
-        .mark_line(point=True, strokeWidth=2)
-        .encode(
-            x=x,
-            y=y,
-            tooltip=[
-                alt.Tooltip("period:T", title="Period"),
-                alt.Tooltip("value:Q", title="Value", format=",.1f"),
-            ],
-        )
-    )
-    layers: list[alt.Chart] = []
-    if usual is not None:
-        band = pl.DataFrame({"low": [usual.low], "high": [usual.high]})
-        layers.append(
+
+
+def context_layers(
+    trend: Trend, events: Sequence[tuple[date, str]]
+) -> tuple[list[alt.Chart], list[alt.Chart]]:
+    """Draw the usual range and goal behind the data, and life events over it.
+
+    Args:
+        trend: The chart's content.
+        events: (date, label) life events; those outside the chart are left out.
+
+    Returns:
+        Layers to draw under the data, and layers to draw over it.
+    """
+    under: list[alt.Chart] = []
+    if trend.usual is not None:
+        band = pl.DataFrame({"low": [trend.usual[0]], "high": [trend.usual[1]]})
+        under.append(
             alt.Chart(band)
             .mark_rect(opacity=0.12, color="gray")
             .encode(y="low:Q", y2="high:Q")
         )
-    if events:
-        marks = pl.DataFrame(
-            {"day": [day for day, _ in events], "label": [label for _, label in events]}
-        )
-        tooltip = [
-            alt.Tooltip("label:N", title="Life event"),
-            alt.Tooltip("day:T", title="Date", format="%-d %b %Y"),
-        ]
-        rule = (
-            alt.Chart(marks)
-            .mark_rule(strokeDash=[3, 3], color="gray")
-            .encode(x="day:T", tooltip=tooltip)
-        )
-        hover_area = (
-            alt.Chart(marks)
-            .mark_rule(strokeWidth=12, opacity=0)
-            .encode(x="day:T", tooltip=tooltip)
-        )
-        layers += [rule, hover_area]
-    if goals:
-        targets = pl.DataFrame(
+    if trend.goals:
+        goals = pl.DataFrame(
             {
-                "period": [day for day, _ in goals],
-                "goal": [target for _, target in goals],
+                "x": [start for start, _, _ in trend.goals],
+                "x2": [end for _, end, _ in trend.goals],
+                "goal": [target for *_, target in trend.goals],
+                "label": [
+                    format_value(target, trend.unit, trend.currency)
+                    for *_, target in trend.goals
+                ],
             }
         )
-        layers.append(
-            alt.Chart(targets)
-            .mark_line(strokeDash=[6, 4], strokeWidth=1.5, color="#16A34A")
+        under.append(
+            alt.Chart(goals)
+            .mark_rule(strokeDash=[6, 4], strokeWidth=1.5, color=GOAL_HEX)
             .encode(
-                x="period:T",
+                x=time_axis(trend),
+                x2="x2:T",
                 y="goal:Q",
-                tooltip=[alt.Tooltip("goal:Q", title="Goal", format=",.1f")],
+                tooltip=[alt.Tooltip("label:N", title="Goal")],
             )
         )
-    return alt.LayerChart(layer=[*layers, line]).properties(height=260)
+    shown = [(day, label) for day, label in events if trend.first <= day < trend.end]
+    if not shown:
+        return under, []
+    marks = pl.DataFrame(
+        {"x": [day for day, _ in shown], "label": [label for _, label in shown]}
+    )
+    tooltip = [
+        alt.Tooltip("label:N", title="Life event"),
+        alt.Tooltip("x:T", title="Date", format="%-d %b %Y"),
+    ]
+    rule = (
+        alt.Chart(marks)
+        .mark_rule(strokeDash=[3, 3], color="gray")
+        .encode(x=time_axis(trend), tooltip=tooltip)
+    )
+    hover_area = (
+        alt.Chart(marks)
+        .mark_rule(strokeWidth=12, opacity=0)
+        .encode(x=time_axis(trend), tooltip=tooltip)
+    )
+    return under, [rule, hover_area]
+
+
+def value_axis(trend: Trend, field: str = "value", zero: bool = False) -> alt.Y:
+    """Build the y axis for a chart's values.
+
+    Args:
+        trend: The chart's content.
+        field: The column holding the values.
+        zero: Whether the axis starts at zero, as bars must.
+
+    Returns:
+        The axis, labelled like the cards.
+    """
+    return alt.Y(
+        f"{field}:Q",
+        title=None,
+        axis=axis_for(trend.unit, ""),
+        scale=alt.Scale(zero=zero),
+    )
+
+
+def total_bars(trend: Trend) -> alt.Chart:
+    """Draw each period's total as a bar, split by item when there are items.
+
+    Args:
+        trend: The chart's content.
+
+    Returns:
+        The bars; the selected period is fainter while it is still in progress.
+    """
+    rows = trend.parts or tuple(("", *period) for period in trend.periods)
+    edges = [inset(start, end) for _, start, end, _ in rows]
+    last = trend.periods[-1][0] if trend.periods else None
+    stacked: dict[date, float] = defaultdict(float)
+    bottoms, tops = [], []
+    for _, start, _, value in rows:
+        bottoms.append(stacked[start])
+        stacked[start] += value
+        tops.append(stacked[start])
+    frame = pl.DataFrame(
+        {
+            "x": [left for left, _ in edges],
+            "x2": [right for _, right in edges],
+            "item": [item for item, *_ in rows],
+            "bottom": bottoms,
+            "top": tops,
+            "period": [period_name(start, end) for _, start, end, _ in rows],
+            "label": [
+                format_value(value, trend.unit, trend.currency) for *_, value in rows
+            ],
+            "partial": [trend.partial and start == last for _, start, _, _ in rows],
+        }
+    )
+    tooltip = [
+        alt.Tooltip("period:N", title="Period"),
+        alt.Tooltip("label:N", title="Total"),
+    ]
+    items = list(dict.fromkeys(item for item, *_ in rows))
+    color = (
+        alt.Color("item:N", sort=items, legend=alt.Legend(orient="top", title=None))
+        if trend.parts
+        else alt.value(STATUS_HEX["blue"])
+    )
+    if trend.parts:
+        tooltip.insert(1, alt.Tooltip("item:N", title="Item"))
+    return (
+        alt.Chart(frame)
+        .mark_bar(cornerRadius=2)
+        .encode(
+            x=time_axis(trend),
+            x2="x2:T",
+            y=value_axis(trend, "bottom", zero=True),
+            y2="top:Q",
+            color=color,
+            opacity=alt.condition("datum.partial", alt.value(0.45), alt.value(1.0)),
+            tooltip=tooltip,
+        )
+    )
+
+
+def day_dots(trend: Trend) -> list[alt.Chart]:
+    """Draw each day as a faint dot and each period's average as a line over them.
+
+    Args:
+        trend: The chart's content.
+
+    Returns:
+        The dots and the line.
+    """
+    days = pl.DataFrame(
+        {
+            "x": [day for day, _ in trend.days],
+            "value": [value for _, value in trend.days],
+            "day": [f"{day:%a} {day.day} {day:%b %Y}" for day, _ in trend.days],
+            "label": [format_value(value, trend.unit) for _, value in trend.days],
+        }
+    )
+    periods = pl.DataFrame(
+        {
+            "x": [middle(start, end) for start, end, _ in trend.periods],
+            "value": [value for *_, value in trend.periods],
+            "period": [period_name(start, end) for start, end, _ in trend.periods],
+            "label": [format_value(value, trend.unit) for *_, value in trend.periods],
+        }
+    )
+    y = value_axis(trend)
+    dots = (
+        alt.Chart(days)
+        .mark_circle(size=16, opacity=0.5, color=MUTED_HEX)
+        .encode(
+            x=time_axis(trend),
+            y=y,
+            tooltip=[
+                alt.Tooltip("day:N", title="Day"),
+                alt.Tooltip("label:N", title="Value"),
+            ],
+        )
+    )
+    line = (
+        alt.Chart(periods)
+        .mark_line(point=alt.OverlayMarkDef(filled=True, size=36), strokeWidth=2)
+        .encode(
+            x=time_axis(trend),
+            y=y,
+            color=alt.value(STATUS_HEX["blue"]),
+            tooltip=[
+                alt.Tooltip("period:N", title="Period"),
+                alt.Tooltip("label:N", title="Average"),
+            ],
+        )
+    )
+    return [dots, line]
+
+
+def rating_calendar(trend: Trend) -> list[alt.Chart]:
+    """Draw a square per day in weekday rows, shaded by the day's rating.
+
+    Args:
+        trend: The chart's content; its unit is the scale, e.g. ``1-5``.
+
+    Returns:
+        The calendar's layers; days without a rating stay as faint empty squares.
+    """
+    low, high = (float(end) for end in trend.unit.split("-"))
+    rated = dict(trend.days)
+    last = trend.days[-1][0] if trend.days else trend.first
+    count = (min(trend.end, last + timedelta(days=1)) - trend.first).days
+    days = [trend.first + timedelta(days=offset) for offset in range(count)]
+    weeks = [day - timedelta(days=day.weekday()) for day in days]
+    frame = pl.DataFrame(
+        {
+            "x": weeks,
+            "x2": [week + timedelta(days=6) for week in weeks],
+            "weekday": [WEEKDAYS[day.weekday()] for day in days],
+            "day": [f"{day:%a} {day.day} {day:%b %Y}" for day in days],
+            "value": [rated.get(day) for day in days],
+            "label": [
+                "not recorded"
+                if day not in rated
+                else format_value(rated[day], trend.unit)
+                for day in days
+            ],
+        },
+        schema_overrides={"value": pl.Float64},
+    )
+    y = alt.Y(
+        "weekday:O",
+        sort=list(WEEKDAYS),
+        title=None,
+        axis=alt.Axis(ticks=False, domain=False),
+        scale=alt.Scale(paddingInner=0.2),
+    )
+    base = (
+        alt.Chart(frame)
+        .encode(
+            x=time_axis(trend),
+            x2="x2:T",
+            y=y,
+            tooltip=[
+                alt.Tooltip("day:N", title="Day"),
+                alt.Tooltip("label:N", title="Rating"),
+            ],
+        )
+        .properties(height=alt.Step(18))
+    )
+    empty = base.mark_rect(cornerRadius=2, color="gray", opacity=0.15)
+    rated = (
+        base.mark_rect(cornerRadius=2)
+        .transform_filter("isValid(datum.value)")
+        .encode(
+            color=alt.Color(
+                "value:Q",
+                scale=alt.Scale(
+                    domain=[low, high],
+                    range=list(RATING_RAMPS[trend.higher_is_better]),
+                ),
+                legend=alt.Legend(orient="top", title=None, gradientLength=160),
+            )
+        )
+    )
+    return [empty, rated]
+
+
+def reading_steps(trend: Trend) -> list[alt.Chart]:
+    """Draw a line that holds each reading until the next one, to the chart's end.
+
+    Args:
+        trend: The chart's content: one value per day with a new reading.
+
+    Returns:
+        The line and a dot at each reading.
+    """
+    frame = pl.DataFrame(
+        {
+            "x": [day for day, _ in trend.days],
+            "value": [value for _, value in trend.days],
+            "day": [f"{day.day} {day:%b %Y}" for day, _ in trend.days],
+            "label": [format_value(value, trend.unit) for _, value in trend.days],
+        }
+    )
+    steps = [*trend.days, (trend.end, trend.days[-1][1])] if trend.days else []
+    held = pl.DataFrame(
+        {
+            "x": [day for day, _ in steps],
+            "value": [value for _, value in steps],
+        },
+        schema={"x": pl.Date, "value": pl.Float64},
+    )
+    y = value_axis(trend)
+    line = (
+        alt.Chart(held)
+        .mark_line(interpolate="step-after", strokeWidth=2, color=STATUS_HEX["blue"])
+        .encode(x=time_axis(trend), y=y)
+    )
+    dots = (
+        alt.Chart(frame)
+        .mark_circle(size=60, opacity=1, color=STATUS_HEX["blue"])
+        .encode(
+            x=time_axis(trend),
+            y=y,
+            tooltip=[
+                alt.Tooltip("day:N", title="Reading on"),
+                alt.Tooltip("label:N", title="Value"),
+            ],
+        )
+    )
+    return [line, dots]
+
+
+def done_matrix(trend: Trend) -> alt.Chart:
+    """Draw a row per item and a square per period, shaded by the share of days done.
+
+    Args:
+        trend: The chart's content: (item, start, end, days done) parts.
+
+    Returns:
+        The matrix.
+    """
+    edges = [inset(start, end) for _, start, end, _ in trend.parts]
+    frame = pl.DataFrame(
+        {
+            "x": [left for left, _ in edges],
+            "x2": [right for _, right in edges],
+            "item": [item for item, *_ in trend.parts],
+            "share": [done / (end - start).days for _, start, end, done in trend.parts],
+            "period": [period_name(start, end) for _, start, end, _ in trend.parts],
+            "label": [
+                f"{done:.0f} of {(end - start).days} days"
+                for _, start, end, done in trend.parts
+            ],
+        }
+    )
+    return (
+        alt.Chart(frame)
+        .mark_rect(cornerRadius=2)
+        .encode(
+            x=time_axis(trend),
+            x2="x2:T",
+            y=alt.Y(
+                "item:N",
+                sort=None,
+                title=None,
+                axis=alt.Axis(ticks=False, domain=False, labelLimit=140),
+                scale=alt.Scale(paddingInner=0.2),
+            ),
+            color=alt.Color(
+                "share:Q",
+                scale=alt.Scale(domain=[0, 1], range=list(RATING_RAMPS[True])),
+                legend=alt.Legend(
+                    orient="top", title=None, format="%", gradientLength=160
+                ),
+            ),
+            tooltip=[
+                alt.Tooltip("item:N", title="Item"),
+                alt.Tooltip("period:N", title="Period"),
+                alt.Tooltip("label:N", title="Done"),
+            ],
+        )
+        .properties(height=alt.Step(20))
+    )
+
+
+def range_bars(trend: Trend) -> alt.Chart:
+    """Draw a bar from each period's low value to its high one, e.g. blood pressure.
+
+    Args:
+        trend: The chart's content: the low part's values, then the high part's.
+
+    Returns:
+        The bars.
+    """
+    low_name = trend.parts[0][0]
+    lows = {start: value for name, start, _, value in trend.parts if name == low_name}
+    pairs = [
+        (start, end, lows[start], value)
+        for name, start, end, value in trend.parts
+        if name != low_name and start in lows
+    ]
+    frame = pl.DataFrame(
+        {
+            "x": [middle(start, end) for start, end, _, _ in pairs],
+            "low": [low for *_, low, _ in pairs],
+            "high": [high for *_, high in pairs],
+            "period": [period_name(start, end) for start, end, _, _ in pairs],
+            "label": [
+                f"{format_value(high, trend.unit)}/{format_value(low, trend.unit)} "
+                f"{trend.unit}"
+                for *_, low, high in pairs
+            ],
+        }
+    )
+    tooltip = [
+        alt.Tooltip("period:N", title="Period"),
+        alt.Tooltip("label:N", title="Average"),
+    ]
+    return (
+        alt.Chart(frame)
+        .mark_rule(strokeWidth=6, strokeCap="round", color=STATUS_HEX["blue"])
+        .encode(
+            x=time_axis(trend),
+            y=alt.Y("low:Q", title=None, scale=alt.Scale(zero=False)),
+            y2="high:Q",
+            tooltip=tooltip,
+        )
+    )
+
+
+def trend_chart(trend: Trend, events: Sequence[tuple[date, str]]) -> alt.LayerChart:
+    """Draw a Trends chart in the form that suits its numbers.
+
+    Args:
+        trend: The chart's content.
+        events: (date, label) life events, drawn as dashed lines.
+
+    Returns:
+        A layered Altair chart on a time axis shared by the whole page.
+    """
+    under, over = context_layers(trend, events)
+    if trend.kind in (TrendKind.TOTALS, TrendKind.STACK):
+        marks = [total_bars(trend)]
+    elif trend.kind is TrendKind.DAYS:
+        marks = day_dots(trend)
+    elif trend.kind is TrendKind.CALENDAR:
+        marks = rating_calendar(trend)
+    elif trend.kind is TrendKind.READINGS:
+        marks = reading_steps(trend)
+    elif trend.kind is TrendKind.MATRIX:
+        marks = [done_matrix(trend)]
+    else:
+        marks = [range_bars(trend)]
+    sized = trend.kind not in (TrendKind.CALENDAR, TrendKind.MATRIX)
+    chart = alt.LayerChart(layer=[*under, *marks, *over])
+    return chart.properties(height=TREND_HEIGHT) if sized else chart
 
 
 def nights_chart(nights: Sequence[tuple[str, datetime, datetime, str]]) -> alt.Chart:

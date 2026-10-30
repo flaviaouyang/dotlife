@@ -17,7 +17,7 @@ from dotlife.dashboard.display import (
     unit_label,
 )
 from dotlife.load import Dataset
-from dotlife.periods import Period, period_end
+from dotlife.periods import Period, period_end, period_start
 from dotlife.schema import Aggregate, Category, Grain, Row, inferred_from
 from dotlife.summaries import (
     Assessment,
@@ -71,6 +71,7 @@ STATUS_CHIPS = {
     Status.ABOVE: "Above usual",
 }
 COMPARABLE_WHILE_PARTIAL = (Aggregate.MEAN, Aggregate.LAST)
+TREND_ITEMS = 6
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,6 +187,98 @@ class CardChart:
     targets: tuple[tuple[str, float], ...] = ()
     window: tuple[date, date] | None = None
     unit: str = ""
+
+
+class TrendKind(StrEnum):
+    """The chart a Trends metric draws, chosen by what its numbers are.
+
+    Totals are bars per period, stacked by item where the category has items.
+    Averages show each day as a dot under the period's average line. Ratings
+    shade a calendar square per day. Occasional readings (``last``) step from one
+    reading to the next. Days done per item (habits) shade a square per item and
+    period. Parts of a whole (sleep stages) stack, and a low and a high (blood
+    pressure) span a bar.
+    """
+
+    TOTALS = "totals"
+    DAYS = "days"
+    CALENDAR = "calendar"
+    READINGS = "readings"
+    MATRIX = "matrix"
+    STACK = "stack"
+    RANGE = "range"
+
+
+TREND_GROUPS = {
+    "sleep": (
+        (
+            "Sleep stages",
+            TrendKind.STACK,
+            ("deep_min", "rem_min", "light_min", "awake_min"),
+        ),
+    ),
+    "vitals": (
+        ("Blood pressure", TrendKind.RANGE, ("diastolic_mmhg", "systolic_mmhg")),
+    ),
+    "nutrition": (
+        ("Macronutrients", TrendKind.STACK, ("protein_g", "carbs_g", "fat_g")),
+    ),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class TrendSpec:
+    """One Trends chart: what it is called, how it draws and which numbers it uses.
+
+    Attributes:
+        label: The chart's title.
+        kind: How to draw it.
+        parts: The metrics it shows; one, except for grouped charts.
+    """
+
+    label: str
+    kind: TrendKind
+    parts: tuple[CardSpec, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Trend:
+    """Everything a Trends chart shows, in display units.
+
+    Attributes:
+        label: The chart's title.
+        kind: How to draw it.
+        unit: The display unit.
+        summary: The selected period's value and usual range in words.
+        notes: Warnings, e.g. a stale value or inferred days; may be empty.
+        first: The first day the chart covers.
+        end: The day after the selected period.
+        periods: (start, end, value) per period, oldest first.
+        days: (day, value) per recorded day, oldest first.
+        parts: (part, start, end, value) per part and period: items for stacked
+            totals and the matrix, metrics for grouped charts.
+        usual: The usual range as (low, high), drawn as a band, or None.
+        goals: (start, end, target) per period; empty without a goal.
+        partial: Whether the selected period is still in progress.
+        higher_is_better: The good direction, or None when neither is.
+        currency: The home currency code, for money.
+    """
+
+    label: str
+    kind: TrendKind
+    unit: str
+    summary: str
+    notes: tuple[str, ...]
+    first: date
+    end: date
+    periods: tuple[tuple[date, date, float], ...]
+    days: tuple[tuple[date, float], ...]
+    parts: tuple[tuple[str, date, date, float], ...]
+    usual: tuple[float, float] | None
+    goals: tuple[tuple[date, date, float], ...]
+    partial: bool
+    higher_is_better: bool | None
+    currency: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -331,8 +424,31 @@ def card_labels(dataset: Dataset) -> dict[str, str]:
     }
 
 
-def trend_specs(category: Category) -> list[CardSpec]:
+def trend_kind(spec: CardSpec, aggregate: Aggregate, has_items: bool) -> TrendKind:
+    """Choose how a single metric's Trends chart draws.
+
+    Args:
+        spec: The metric's chart.
+        aggregate: The metric's own aggregate, before any card override.
+        has_items: Whether the category splits values into items.
+
+    Returns:
+        Calendar for ratings, readings for latest values, days for other
+        averages, a matrix for days done per item, and totals otherwise.
+    """
+    if spec.aggregate is Aggregate.MEAN:
+        return TrendKind.CALENDAR if spec.unit in SCALE_UNITS else TrendKind.DAYS
+    if spec.aggregate is Aggregate.LAST:
+        return TrendKind.READINGS
+    if has_items and aggregate is Aggregate.DAYS:
+        return TrendKind.MATRIX
+    return TrendKind.TOTALS
+
+
+def trend_specs(category: Category) -> list[TrendSpec]:
     """Choose a category's Trends charts: every metric, plus derived ones.
+
+    Metrics that make sense together, such as sleep stages, share one chart.
 
     Args:
         category: The category.
@@ -341,9 +457,9 @@ def trend_specs(category: Category) -> list[CardSpec]:
         One spec per chart, the Overview's derived cards (counts, clock times)
         included.
     """
-    derived = [spec for spec in card_specs(category) if spec.column is None]
-    metrics = [
-        CardSpec(
+    has_items = item_column(category) is not None
+    by_column = {
+        metric.column: CardSpec(
             category.name,
             metric.column,
             LABELS.get(f"{category.name}.{metric.column}", metric.label),
@@ -354,6 +470,22 @@ def trend_specs(category: Category) -> list[CardSpec]:
             metric.higher_is_better,
         )
         for metric in category.metrics
+    }
+    groups = TREND_GROUPS.get(category.name, ())
+    grouped = {column for *_, columns in groups for column in columns}
+    metrics = [
+        TrendSpec(spec.label, trend_kind(spec, metric.aggregate, has_items), (spec,))
+        for metric in category.metrics
+        if metric.column not in grouped
+        for spec in (by_column[metric.column],)
+    ] + [
+        TrendSpec(label, kind, tuple(by_column[column] for column in columns))
+        for label, kind, columns in groups
+    ]
+    derived = [
+        TrendSpec(spec.label, trend_kind(spec, spec.aggregate, False), (spec,))
+        for spec in card_specs(category)
+        if spec.column is None
     ]
     return derived + metrics if category.name == "workouts" else metrics + derived
 
@@ -495,18 +627,34 @@ def chip_and_color(reading: Reading) -> tuple[str, Color]:
     return STATUS_CHIPS[reading.assessment.status], TONE_COLORS[reading.assessment.tone]
 
 
-def item_values(
-    spec: CardSpec, dataset: Dataset, selection: Selection
-) -> list[tuple[str, date, float]]:
-    """List a card's values by item and day in the period, for breakdowns.
+def item_column(category: Category) -> str | None:
+    """Name the column that splits a category's values into items.
 
     Items are a daily category's one item column (a habit, a calendar category)
     or a transaction's spending category.
 
     Args:
+        category: The category.
+
+    Returns:
+        The column, or None when the category has no items.
+    """
+    if category.name == "finances":
+        return "category"
+    items = [name for name in category.key if name != "date"]
+    return items[0] if category.grain is Grain.DAY and len(items) == 1 else None
+
+
+def item_values(
+    spec: CardSpec, dataset: Dataset, start: date, end: date
+) -> list[tuple[str, date, float]]:
+    """List a card's values by item and day, for breakdowns.
+
+    Args:
         spec: The card.
         dataset: The loaded data.
-        selection: The chosen period.
+        start: First day to list.
+        end: Day after the last.
 
     Returns:
         (item, date, value) triples; empty for cards without items. Spending is
@@ -514,16 +662,12 @@ def item_values(
     """
     if spec.column is None or spec.category == "reflections":
         return []
-    category = category_named(dataset, spec.category)
-    if spec.category == "finances":
-        home = dataset.contexts["finances"].options.get("home_currency")
-        item, keep = "category", lambda row: is_spending(row, home)
-    else:
-        items = [name for name in category.key if name != "date"]
-        if category.grain is not Grain.DAY or len(items) != 1:
-            return []
-        item, keep = items[0], lambda row: True
-    sign = -1.0 if spec.category == "finances" else 1.0
+    item = item_column(category_named(dataset, spec.category))
+    if item is None:
+        return []
+    home = dataset.contexts[spec.category].options.get("home_currency")
+    finances = spec.category == "finances"
+    sign = -1.0 if finances else 1.0
     return [
         (
             cast(str, row[item]),
@@ -532,8 +676,8 @@ def item_values(
         )
         for row in dataset.rows[spec.category]
         if row.get(spec.column) is not None
-        and selection.start <= cast(date, row["date"]) < selection.end
-        and keep(row)
+        and start <= cast(date, row["date"]) < end
+        and (not finances or is_spending(row, home))
     ]
 
 
@@ -568,7 +712,7 @@ def breakdown(spec: CardSpec, dataset: Dataset, selection: Selection) -> str:
         if spec.category == "finances"
         else ""
     )
-    totals = item_totals(item_values(spec, dataset, selection))[:5]
+    totals = item_totals(item_values(spec, dataset, selection.start, selection.end))[:5]
     return " · ".join(
         f"{name} {format_value(total, spec.unit, currency)}" for name, total in totals
     )
@@ -800,7 +944,7 @@ def card_chart(
             sorted((d, v) for d, v in reading.daily.items() if first <= d <= last)
         )
         return CardChart(ChartKind.CYCLE, days, window=(first, last), unit=reading.unit)
-    parts = item_values(spec, dataset, selection)
+    parts = item_values(spec, dataset, selection.start, selection.end)
     budgets = period_budgets(dataset, selection) if spec.category == "finances" else {}
     if parts and budgets:
         targets = tuple(sorted(budgets.items()))
@@ -965,7 +1109,9 @@ def budget_note(dataset: Dataset, selection: Selection, currency: str) -> str:
     if not budgets:
         return ""
     spec = CardSpec("finances", "amount", "Spending", Aggregate.SUM, "")
-    spent = dict(item_totals(item_values(spec, dataset, selection)))
+    spent = dict(
+        item_totals(item_values(spec, dataset, selection.start, selection.end))
+    )
 
     def line(category: str, budget: float) -> str:
         used = spent.get(category, 0.0)
@@ -1069,4 +1215,183 @@ def build_overview(
             missing_note(spec, dataset) for spec, card in built if card is None
         ),
         hidden=len(dataset.categories) - len(shown),
+    )
+
+
+def window_starts(
+    earliest: date, selection: Selection, limit: int | None
+) -> list[date]:
+    """List the periods a Trends chart covers, up to the selected one.
+
+    Args:
+        earliest: The first period with data, used when there is no limit.
+        selection: The chosen period.
+        limit: How many periods to cover, or None for all since ``earliest``.
+
+    Returns:
+        Period starts, oldest first.
+    """
+    if limit is not None:
+        earlier = previous_starts(selection.start, selection.period, limit - 1)
+        return [*reversed(earlier), selection.start]
+    starts = [min(earliest, selection.start)]
+    while starts[-1] < selection.start:
+        starts.append(period_end(starts[-1], selection.period))
+    return starts
+
+
+def item_periods(
+    spec: CardSpec,
+    dataset: Dataset,
+    starts: list[date],
+    period: Period,
+    days_done: bool,
+) -> tuple[tuple[str, date, date, float], ...]:
+    """Split a metric's period values by item, e.g. hours per calendar category.
+
+    Args:
+        spec: The metric.
+        dataset: The loaded data.
+        starts: The periods to cover, oldest first.
+        period: Weeks or months.
+        days_done: Count the days each item has a value above zero (habits),
+            instead of totalling the values.
+
+    Returns:
+        (item, start, end, value) per item and period, largest item first. Totals
+        keep the largest items and fold the rest into "Other"; day counts list
+        every item in every period, with zero where it wasn't done.
+    """
+    values = item_values(spec, dataset, starts[0], period_end(starts[-1], period))
+    totals: dict[tuple[str, date], float] = defaultdict(float)
+    for item, day, value in values:
+        totals[item, period_start(day, period)] += (value > 0) if days_done else value
+    ranked = [item for item, _ in item_totals(values)]
+    if days_done:
+        keys = [(item, start) for item in ranked for start in starts]
+    else:
+        kept = (
+            set(ranked[:TREND_ITEMS]) if len(ranked) > TREND_ITEMS + 1 else set(ranked)
+        )
+        folded: dict[tuple[str, date], float] = defaultdict(float)
+        for (item, start), value in totals.items():
+            folded[item if item in kept else "Other", start] += value
+        order = [item for item in ranked if item in kept] + ["Other"]
+        totals = folded
+        keys = [
+            (item, start)
+            for item in order
+            for start in starts
+            if (item, start) in folded
+        ]
+    return tuple(
+        (item, start, period_end(start, period), totals.get((item, start), 0.0))
+        for item, start in keys
+    )
+
+
+def build_trend(
+    trend: TrendSpec, dataset: Dataset, selection: Selection, limit: int | None
+) -> Trend | None:
+    """Build one Trends chart's content, up to the selected period.
+
+    Args:
+        trend: The chart.
+        dataset: The loaded data.
+        selection: The chosen period.
+        limit: How many periods to show, or None for all of them.
+
+    Returns:
+        The chart's content, or None when the selected period has no value.
+    """
+    readings = [
+        (part, each)
+        for part in trend.parts
+        if (each := read(part, dataset, selection)) is not None
+    ]
+    if not readings:
+        return None
+    spec, reading = readings[0]
+    period = selection.period
+    starts = window_starts(
+        min(start for _, each in readings for start in each.values), selection, limit
+    )
+    first, end = starts[0], selection.end
+    currency = (
+        dataset.contexts["finances"].options.get("home_currency", "")
+        if spec.category == "finances"
+        else ""
+    )
+
+    def shown(value: float) -> str:
+        return format_value(value, reading.unit, currency)
+
+    usual = reading.usual
+    if trend.kind is TrendKind.RANGE:
+        low, high = (each.current for _, each in readings[:2])
+        value = f"{shown(high)}/{shown(low)} {reading.unit}"
+    elif len(readings) > 1:
+        value = " · ".join(
+            f"{part.label} {shown(each.current)}" for part, each in readings
+        )
+    else:
+        value = shown(reading.current) + (
+            ""
+            if usual is None
+            else f" · usual {shown(usual.low)} to {shown(usual.high)}"
+        )
+    changed = reading.stale_since
+    inferred = inferred_note(spec, dataset, first, end)
+    notes = (
+        ""
+        if changed is None
+        else f"Unchanged since {changed.day} {changed:%b %Y}, so it may be stale: the "
+        "readings are shown, but it isn't compared with its usual range.",
+        f"{inferred}, not recorded." if inferred else "",
+    )
+    periods = tuple(
+        (start, period_end(start, period), reading.values[start])
+        for start in starts
+        if start in reading.values
+    )
+    if trend.kind in (TrendKind.STACK, TrendKind.RANGE):
+        parts = tuple(
+            (part.label, start, period_end(start, period), each.values[start])
+            for part, each in readings
+            for start in starts
+            if start in each.values
+        )
+    elif trend.kind in (TrendKind.TOTALS, TrendKind.MATRIX):
+        days_done = trend.kind is TrendKind.MATRIX
+        parts = item_periods(spec, dataset, starts, period, days_done)
+    else:
+        parts = ()
+    goal = display_goal(spec, dataset) if len(trend.parts) == 1 else None
+    goals = (
+        ()
+        if goal is None
+        else tuple(
+            (start, stop, period_target(goal, spec.aggregate, start, stop))
+            for start, stop, _ in periods
+        )
+    )
+    banded = trend.kind in (TrendKind.TOTALS, TrendKind.DAYS) and len(readings) == 1
+    return Trend(
+        label=trend.label,
+        kind=trend.kind,
+        unit=reading.unit,
+        summary=f"This {period.value}: {value}",
+        notes=tuple(note for note in notes if note),
+        first=first,
+        end=end,
+        periods=periods,
+        days=tuple(
+            sorted((d, v) for d, v in reading.daily.items() if first <= d < end)
+        ),
+        parts=parts,
+        usual=None if usual is None or not banded else (usual.low, usual.high),
+        goals=goals,
+        partial=cast(date, dataset.as_of) < end - timedelta(days=1),
+        higher_is_better=spec.higher_is_better,
+        currency=currency,
     )

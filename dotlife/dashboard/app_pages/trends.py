@@ -3,18 +3,12 @@ from typing import cast
 
 import streamlit as st
 
-from dotlife.dashboard.cards import (
-    display_goal,
-    inferred_note,
-    period_target,
-    read,
-    trend_specs,
-)
-from dotlife.dashboard.charts import nights_chart, trend_chart
+from dotlife.dashboard.cards import build_trend, trend_specs
+from dotlife.dashboard.charts import ALT_TEXT, nights_chart, trend_chart
 from dotlife.dashboard.data import dataset, layout, period_title, selection
-from dotlife.dashboard.display import format_value, hours_minutes
+from dotlife.dashboard.display import hours_minutes
 from dotlife.dashboard.widgets import category_menu, show_hidden
-from dotlife.periods import Period, period_end
+from dotlife.periods import Period
 
 HISTORY = {
     "3 months": {Period.WEEK: 13, Period.MONTH: 3},
@@ -73,60 +67,23 @@ else:
 
     st.caption(
         f"{chosen.period.value.title()}ly values up to {period_title(chosen).lower()}. "
-        "The band is your usual range and the green dashed line your goal. Grey "
-        "dashed lines are life events: hover for details."
+        "Totals are bars, averages a line over each day's dot, and ratings a "
+        "calendar of days. The grey band is your usual range and the green dashed "
+        "line your goal. Grey dashed lines are life events: hover for details."
     )
 
     for spec in trend_specs(category):
-        reading = read(spec, data, chosen)
-        if reading is None:
+        trend = build_trend(spec, data, chosen, limit)
+        if trend is None:
             continue
-        points = sorted(
-            (start, value)
-            for start, value in reading.values.items()
-            if start <= chosen.start
-        )
-        points = points if limit is None else points[-limit:]
-        shown = [event for event in events if event[0] >= points[0][0]]
-        goal = display_goal(spec, data)
-        goals = (
-            []
-            if goal is None
-            else [
-                (
-                    start,
-                    period_target(
-                        goal, spec.aggregate, start, period_end(start, chosen.period)
-                    ),
-                )
-                for start, _ in points
-            ]
-        )
         with st.container(border=True):
-            st.subheader(spec.label)
-            current = format_value(reading.current, reading.unit)
-            usual = (
-                ""
-                if reading.usual is None
-                else f" · usual {format_value(reading.usual.low, reading.unit)} to "
-                f"{format_value(reading.usual.high, reading.unit)}"
-            )
-            st.caption(f"This {chosen.period.value}: {current}{usual}")
-            if reading.stale_since is not None:
-                changed = reading.stale_since
-                st.caption(
-                    f"Unchanged since {changed.day} {changed:%b %Y}, so it may be "
-                    "stale: the readings are shown, but it isn't compared with its "
-                    "usual range."
-                )
-            inferred = inferred_note(
-                spec, data, points[0][0], period_end(points[-1][0], chosen.period)
-            )
-            if inferred:
-                st.caption(f"{inferred}, not recorded.")
+            st.subheader(trend.label)
+            st.caption(trend.summary)
+            for note in trend.notes:
+                st.caption(note)
             st.altair_chart(
-                trend_chart(points, reading.unit, reading.usual, shown, goals),
-                alt=f"{spec.label} by {chosen.period.value}, with its usual range",
+                trend_chart(trend, events),
+                alt=f"{trend.label} by {chosen.period.value}: {ALT_TEXT[trend.kind]}",
             )
 
     if category.name == "sleep" and chosen.period is Period.WEEK:

@@ -9,8 +9,17 @@ import vl_convert
 
 from dotlife.categories import ACTIVITY, BODY
 from dotlife.config import Goal, find_data, goal_for, goal_problems
-from dotlife.dashboard.cards import CardChart, ChartKind, Selection, build_overview
-from dotlife.dashboard.charts import card_chart
+from dotlife.dashboard.cards import (
+    CardChart,
+    ChartKind,
+    Selection,
+    Trend,
+    TrendKind,
+    build_overview,
+    build_trend,
+    trend_specs,
+)
+from dotlife.dashboard.charts import card_chart, trend_chart
 from dotlife.load import load_dataset
 from dotlife.periods import Period
 from dotlife.schema import Context
@@ -156,6 +165,65 @@ class CardChartRenderTest(unittest.TestCase):
                     spec = card_chart(card.chart, card.color, selection.start, days)
                     svg = vl_convert.vegalite_to_svg(spec.to_dict())
                     self.assertIn("<svg", svg)
+
+
+class TrendTest(unittest.TestCase):
+    """Each kind of metric gets the Trends chart that suits it, and every one draws."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Load the sample once."""
+        cls.dataset = load_dataset(find_data(ROOT / "config.toml", ROOT / "sample"))
+
+    def test_kinds(self):
+        """Totals are bars, averages days, ratings calendars; some metrics share one."""
+        kinds = {
+            spec.label: spec.kind
+            for category in self.dataset.categories
+            for spec in trend_specs(category)
+        }
+        self.assertEqual(kinds["Active time"], TrendKind.TOTALS)
+        self.assertEqual(kinds["Steps"], TrendKind.DAYS)
+        self.assertEqual(kinds["Bedtime"], TrendKind.DAYS)
+        self.assertEqual(kinds["Mood"], TrendKind.CALENDAR)
+        self.assertEqual(kinds["VO2 max"], TrendKind.READINGS)
+        self.assertEqual(kinds["Habit check-ins"], TrendKind.MATRIX)
+        self.assertEqual(kinds["Sleep stages"], TrendKind.STACK)
+        self.assertEqual(kinds["Blood pressure"], TrendKind.RANGE)
+        self.assertNotIn("Deep sleep", kinds)
+
+    def test_items_and_window(self):
+        """Time splits by category; the window covers whole periods up to the week."""
+        time = next(c for c in self.dataset.categories if c.name == "time")
+        selection = Selection(Period.WEEK, date(2026, 8, 24), False)
+        trend = build_trend(trend_specs(time)[0], self.dataset, selection, 13)
+        trend = cast(Trend, trend)
+        self.assertEqual(trend.first, date(2026, 6, 1))
+        self.assertEqual(trend.end, date(2026, 8, 31))
+        week = sum(
+            value for _, start, _, value in trend.parts if start == trend.periods[-1][0]
+        )
+        self.assertAlmostEqual(week, trend.periods[-1][2])
+
+    def test_all_render(self):
+        """Every Trends chart renders to SVG for weeks and months, short and long."""
+        events = [
+            (cast(date, row["date"]), cast(str, row["label"]))
+            for row in self.dataset.rows.get("events", [])
+        ]
+        for selection, limit in (
+            (Selection(Period.WEEK, date(2026, 8, 24), True), 13),
+            (Selection(Period.MONTH, date(2026, 7, 1), True), None),
+        ):
+            for category in self.dataset.categories:
+                for spec in trend_specs(category):
+                    trend = build_trend(spec, self.dataset, selection, limit)
+                    if trend is None:
+                        continue
+                    with self.subTest(period=selection.period, chart=spec.label):
+                        chart = trend_chart(trend, events)
+                        svg = vl_convert.vegalite_to_svg(chart.to_dict())
+                        self.assertIn("<svg", svg)
 
 
 if __name__ == "__main__":
