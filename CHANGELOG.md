@@ -1,10 +1,12 @@
 # Changelog
 
-What changed in each release of dotlife, for the people who use it.
+What changed in each release of dotlife, for the people who use it. While dotlife is in alpha, anything can still change between releases.
 
-## [0.1.0-alpha.9] - 2026-10-30
+## [0.1.0-alpha.9](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.9) - 30 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.8](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.8...v0.1.0-alpha.9)
+
+### ✨ New
 
 - Let source scripts stage rows per source, and merge them by rank in make fresh
 - Add the setup skill
@@ -17,31 +19,35 @@ What changed in each release of dotlife, for the people who use it.
 - Warn about reflections timed after now
 - Add the fetch skill
 
-### Bug fixes
+### 🐛 Fixed
 
 - Count categories and sources in the right number
 - Load pandas at start-up so switching pages doesn't break charts
 - Keep the comment after [sources] in place when setup rewrites it
 - Name agent steps as the fetch skill's, not as left undone
 
-### Documentation
+### 📖 Docs
 
 - Settle Apple Health's choices, clock changes, zeros and rounding
 - Describe staging in every source guide
 - Add a finished sources.md example, checked against dotlife setup
 - Settle when a source script fails, and Oura's choices
 
-## [0.1.0-alpha.8] - 2026-10-30
+## [0.1.0-alpha.8](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.8) - 30 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.7](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.7...v0.1.0-alpha.8)
 
-- **dashboard:** Choose each Trends chart by what its numbers are
-- **dashboard:** Show reflections 20 to a page
-- **dashboard:** Divide pinned cards from the rest on the Overview
+### ✨ New
 
-## [0.1.0-alpha.7] - 2026-10-29
+- **Dashboard:** Choose each Trends chart by what its numbers are
+- **Dashboard:** Show reflections 20 to a page
+- **Dashboard:** Divide pinned cards from the rest on the Overview
 
-### Features
+## [0.1.0-alpha.7](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.7) - 29 October 2026
+
+[All changes since 0.1.0-alpha.6](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.6...v0.1.0-alpha.7)
+
+### ✨ New
 
 - Define what each column holds, and add height, absolute skin temperature and event sources
 - Reject a day whose time across rows adds up to more than a day
@@ -51,48 +57,57 @@ What changed in each release of dotlife, for the people who use it.
 - Switch off untracked categories with a track list in config.toml
 - Add dotlife setup, with arrow-key questions or an agent's answers
 
-### Bug fixes
+### 🐛 Fixed
 
 - Count a day as watch-off only with both few steps and little sedentary time
 - Read reflection stars and tags the way jrnl writes them
 
-### Documentation
+### 📖 Docs
 
 - Add source guides for nine sources
 - Plan setup, make fresh, fetch and maintain in place of setup-sources and sync
 - Add the inference guide
 - Add the weather guide
 
-## [0.1.0-alpha.6] - 2026-10-29
+## [0.1.0-alpha.6](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.6) - 29 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.5](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.5...v0.1.0-alpha.6)
+
+### ✨ New
 
 - Pin or hide cards and categories from a card menu
 - Pin or hide Overview cards and Trends categories separately
 - Colour cards green for good, orange for bad and blue for neutral
 
-## [0.1.0-alpha.5] - 2026-10-29
+## [0.1.0-alpha.5](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.5) - 29 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.4](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.4...v0.1.0-alpha.5)
+
+### ✨ New
 
 - Show the cycle as a calendar strip and spending against budgets
 
-### Documentation
+### 📖 Docs
 
 - Add dashboard screenshots to the README
 
-## [0.1.0-alpha.4] - 2026-10-29
+## [0.1.0-alpha.4](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.4) - 29 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.3](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.3...v0.1.0-alpha.4)
 
-- **Breaking:** Replace the journal with yearly reflections files
+### 💥 Breaking changes
+
+- Replace the journal with yearly reflections files
+
+### ✨ New
+
 - Add goals to config, cards and trend charts
 - Pin Overview cards, saved in config.toml
 - Replace card sparklines with charts suited to each metric
 - Lay out reflections like a diary, with highlighted search
 - Underline the author credit on hover
 
-### Bug fixes
+### 🐛 Fixed
 
 - Show life events as hover lines so labels can't overlap
 - Draw card charts that have a usual-range band
@@ -100,13 +115,15 @@ What changed in each release of dotlife, for the people who use it.
 - Show the dotlife favicon in Safari
 - Keep the logo visible in dark mode
 
-### Documentation
+### 📖 Docs
 
 - Credit the author in the dashboard and README
 
-## [0.1.0-alpha.3] - 2026-10-29
+## [0.1.0-alpha.3](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.3) - 29 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.2](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.2...v0.1.0-alpha.3)
+
+### ✨ New
 
 - Add the journal reader and the summary calculations
 - Load a data folder once into a dataset
@@ -114,18 +131,20 @@ What changed in each release of dotlife, for the people who use it.
 - Build the Overview, Trends, Journal and Data health pages
 - Add the dotlife logo and favicon to the dashboard
 
-### Bug fixes
+### 🐛 Fixed
 
 - Stop sample journal entries naming the wrong weekday.
 
-### Documentation
+### 📖 Docs
 
 - Update performance guideline to use polars instead of pandas in the dashboard
 - Show the logo at the top of the README
 
-## [0.1.0-alpha.2] - 2026-10-29
+## [0.1.0-alpha.2](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.2) - 29 October 2026
 
-### Features
+[All changes since 0.1.0-alpha.1](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.1...v0.1.0-alpha.2)
+
+### ✨ New
 
 - Add config defaults for display, dashboard, stale values and finances
 - Mark categories expected every day and flag foreign currencies
@@ -135,19 +154,19 @@ What changed in each release of dotlife, for the people who use it.
 - Add Sherlock Holmes sample data
 - Make Alice of Alice and Bob the sample persona
 
-### Documentation
+### 📖 Docs
 
 - Restyle README
 - Add FORMAT.md, generated from the category specs
 
-## [0.1.0-alpha.1] - 2026-10-29
+## [0.1.0-alpha.1](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.1) - 29 October 2026
 
-### Features
+### ✨ New
 
 - Add periods, category schema and first category specs
 - Define all 27 categories with hard limits and plausible bounds
 
-### Documentation
+### 📖 Docs
 
 - Add agent instructions
 - Describe the dotlife package layout
