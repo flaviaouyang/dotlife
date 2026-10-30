@@ -10,6 +10,7 @@ import tomlkit
 
 from dotlife.categories import AREA_OF, AREAS, CATEGORIES
 from dotlife.terminal import Option, Prompter
+from dotlife.validate import plural
 
 MANUAL = "manual"
 FROM_REFLECTIONS = "inferred-reflections"
@@ -883,12 +884,12 @@ def summary(answers: Answers, labels: Mapping[str, str]) -> list[str]:
     Returns:
         Lines to show.
     """
+    sources = {value for values in answers.sources.values() for value in values}
     lines = [
         f"Time zone {answers.timezone}, by {answers.period}, "
         f"{answers.weight} and {answers.glucose}.",
-        f"Tracking {len(answers.track)} categories from "
-        f"{len({value for values in answers.sources.values() for value in values})} "
-        "sources.",
+        f"Tracking {plural(len(answers.track), 'category', 'categories')} from "
+        f"{plural(len(sources), 'source')}.",
     ]
     if "finances" in answers.track:
         lines.append(
