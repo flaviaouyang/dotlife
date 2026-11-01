@@ -13,6 +13,7 @@ from dotlife.setup import (
     FROM_REFLECTIONS,
     SOURCES_END,
     SOURCES_START,
+    finish_setup,
     next_step,
     run_answers,
     run_setup,
@@ -114,17 +115,15 @@ FIRST_RUN = {
     "currency": "GBP",
     "budgets": "groceries=300, eating_out=120",
     "dining_out": True,
+    "show_sensitive": True,
     "sources": ["apple-health", "oura", "jrnl"],
-    "other_sources": "Example Bank",
+    "other": "Example Bank, a CSV I download monthly",
     "rank": ["oura", "apple-health"],
-    "review": Each(["mood", "finances", "ok"]),
-    "change:mood": [FROM_REFLECTIONS],
-    "change:finances": ["example-bank"],
 }
 
 
 class SetupTest(unittest.TestCase):
-    """Setup asks, assumes sources, writes config.toml and sources.md, and reruns."""
+    """Setup asks plain questions, assumes sources, writes the files, and reruns."""
 
     def setUp(self):
         """Copy the template config.toml into an empty repo folder."""
@@ -156,7 +155,7 @@ class SetupTest(unittest.TestCase):
         return fake
 
     def test_first_run_assumes_sources_and_writes(self):
-        """Sources are assumed from the apps picked, ranked, then reviewed."""
+        """Sources are assumed from the apps picked and ranked; the rest is kept."""
         fake = self.run_with(FIRST_RUN)
         config = tomllib.loads(self.config.read_text(encoding="utf-8"))
         self.assertEqual(config["timezone"], "Europe/London")
@@ -175,9 +174,9 @@ class SetupTest(unittest.TestCase):
                 "workouts": ["oura", "apple-health"],
                 "sleep": ["oura", "apple-health"],
                 "body": ["apple-health"],
-                "mood": ["inferred-reflections"],
+                "mood": ["apple-health"],
                 "reflections": ["jrnl"],
-                "finances": ["example-bank"],
+                "finances": ["manual"],
                 "weather": ["open-meteo"],
                 "dining_out": ["inferred-finances"],
             },
@@ -189,13 +188,20 @@ class SetupTest(unittest.TestCase):
         }
         self.assertEqual(on, set(config["sources"]))
         self.assertIn("rank", fake.asked)
+        self.assertNotIn("review", fake.asked)
+        self.assertTrue(config["dashboard"]["show_sensitive"])
+        self.assertEqual(
+            config["setup"]["other"], "Example Bank, a CSV I download monthly"
+        )
+        self.assertTrue(any("No guide covers Finances" in line for line in fake.shown))
         self.assertIn("docs/sources/README.md", fake.shown[-1])
         sources = (self.root / "sources.md").read_text(encoding="utf-8")
         self.assertIn(
             "| Open-Meteo | [weather.md](docs/sources/weather.md) | Weather |", sources
         )
         self.assertIn("- Activity: Oura over Apple Health", sources)
-        self.assertIn("| example-bank | none yet | Finances |", sources)
+        self.assertIn("## In your own words", sources)
+        self.assertIn("> Example Bank, a CSV I download monthly", sources)
 
     def test_comments_survive(self):
         """Every comment in the template is still there after setup."""
@@ -230,9 +236,44 @@ class SetupTest(unittest.TestCase):
         self.assertEqual(self.config.read_text(encoding="utf-8"), before)
         self.assertFalse((self.root / "sources.md").exists())
 
+    def test_sensitive_display_is_asked_only_for_sensitive_categories(self):
+        """Without a sensitive category, the question is skipped and the file kept."""
+        fake = self.run_with(
+            FIRST_RUN
+            | {
+                "categories:Mind": ["mood"],
+                "categories:Money": [],
+                "show_sensitive": True,
+            }
+        )
+        self.assertNotIn("show_sensitive", fake.asked)
+        config = tomllib.loads(self.config.read_text(encoding="utf-8"))
+        self.assertFalse(config["dashboard"]["show_sensitive"])
+
+    def test_sources_an_agent_added_survive_a_rerun(self):
+        """A source without a guide, written by an agent, isn't reassigned."""
+        self.run_with(FIRST_RUN)
+        self.change_sources({"finances": ["example-bank"]})
+        self.run_with({})
+        config = tomllib.loads(self.config.read_text(encoding="utf-8"))
+        self.assertEqual(config["sources"]["finances"], ["example-bank"])
+
+    def change_sources(self, changes: Mapping[str, Sequence[str]]) -> None:
+        """Change some categories' sources the way an agent does, with --answers.
+
+        Args:
+            changes: New sources by category, best first.
+        """
+        sources = json.loads(run_answers(self.config, None))["sources"] | changes
+        path = self.root / "answers.json"
+        path.write_text(json.dumps({"sources": sources}), encoding="utf-8")
+        run_answers(self.config, path)
+
     def test_inference_is_flagged(self):
-        """Choosing AI inference warns that it needs an agent."""
-        fake = self.run_with(FIRST_RUN | {"write": False})
+        """Inference an agent chose warns on rerun that it needs an agent."""
+        self.run_with(FIRST_RUN)
+        self.change_sources({"mood": [FROM_REFLECTIONS]})
+        fake = self.run_with({"write": False})
         self.assertTrue(
             any(line.startswith("Warning: Inferring") for line in fake.shown)
         )
@@ -270,9 +311,7 @@ class AnswersTest(unittest.TestCase):
     def test_same_files_as_the_questionnaire(self):
         """Answers printed after the questionnaire recreate its files exactly."""
         asked = self.root / "asked" / "config.toml"
-        run_setup(
-            asked, FakePrompter(dict(FIRST_RUN, review=Each(FIRST_RUN["review"])))
-        )
+        run_setup(asked, FakePrompter(dict(FIRST_RUN)))
         printed = json.loads(run_answers(asked, None))
         self.answer("agent", printed)
         for name in ("config.toml", "sources.md"):
@@ -311,6 +350,8 @@ class AnswersTest(unittest.TestCase):
             },
             "period must be one of": {"period": "fortnight"},
             "ISO 4217": {"home_currency": "euro"},
+            "show_sensitive must be true or false": {"show_sensitive": "yes"},
+            "other must be text": {"other": ["Example Bank"]},
         }
         for message, data in cases.items():
             with (
@@ -320,6 +361,49 @@ class AnswersTest(unittest.TestCase):
                 self.answer("agent", data)
         after = (self.root / "agent" / "config.toml").read_text(encoding="utf-8")
         self.assertEqual(after, before)
+
+
+class FinishTest(unittest.TestCase):
+    """The last step of setup deletes sample/, but only once there is data."""
+
+    def setUp(self):
+        """Make a repo folder with a config.toml and a sample/ folder."""
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.config = self.root / "config.toml"
+        shutil.copy(ROOT / "config.toml", self.config)
+        (self.root / "sample").mkdir()
+        (self.root / "sample" / "sleep.csv").write_text("date\n", encoding="utf-8")
+
+    def tearDown(self):
+        """Delete the repo folder."""
+        self.temp.cleanup()
+
+    def test_refused_until_data_exists(self):
+        """With no data yet, sample/ stays."""
+        with self.assertRaisesRegex(ValueError, "no data yet"):
+            finish_setup(self.config)
+        self.assertTrue((self.root / "sample").is_dir())
+
+    def test_deletes_sample_once_data_exists(self):
+        """A data file is enough; a second call has nothing left to do."""
+        (self.root / "data").mkdir()
+        (self.root / "data" / "sleep.csv").write_text("date\n", encoding="utf-8")
+        self.assertIn("Deleted sample/", finish_setup(self.config))
+        self.assertFalse((self.root / "sample").exists())
+        self.assertIn("nothing to clean up", finish_setup(self.config))
+
+    def test_refused_when_data_dir_is_the_sample(self):
+        """A config pointing at sample/ never loses it."""
+        self.config.write_text(
+            self.config.read_text(encoding="utf-8").replace(
+                'data_dir = "data"', 'data_dir = "sample"'
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "points|point it"):
+            finish_setup(self.config)
+        self.assertTrue((self.root / "sample").is_dir())
 
 
 class NextStepTest(unittest.TestCase):

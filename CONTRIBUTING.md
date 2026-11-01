@@ -23,9 +23,9 @@ The project is early, so most of these don't exist yet. All project code lives i
   - `load.py`: reads a data folder once into a `Dataset` (rows by category, settings, reflections).
   - `summaries.py`: the calculations the dashboard shows: daily and period values, clock times, the usual range, assessments, notable metrics, the stuck flag and display units. Standard library only, so other tools (like a future weekly-review skill) can reuse them.
   - `validate.py`: the validator. Errors fail it; warnings, gaps and skipped days are reported. `--json` is for programs.
-  - `setup.py`: `dotlife setup`: the questionnaire, and `--answers` for agents; both write `config.toml` and the start of `sources.md` with the same code.
+  - `setup.py`: `dotlife setup`: the plain questions everyone answers first (what to track, apps, their own words, show sensitive), `--answers` for agents to change them, and `--finish`, which deletes `sample/` once there is data; all write `config.toml` and the start of `sources.md` with the same code.
   - `terminal.py`: the questionnaire's arrow-key menus (standard library: `termios` or `msvcrt`), with numbered prompts when input isn't a terminal. Colour honours `NO_COLOR`.
-  - `fresh.py`: `dotlife fresh`, which runs the person's source scripts listed in `config.toml`, merges what they staged, then validates.
+  - `fresh.py`: `dotlife fresh`, which runs the person's source scripts listed in `config.toml`, merges what they staged, then validates. It records when each step last finished in `.dotlife/good_runs.json`, so a failed step can say how old its rows are.
   - `staging.py`: what source scripts import: `from_env()`, `Staging.wants` and `Staging.write`, which stage rows in `data/sources/<source>/`. Also the merge that builds each data file from them, by the ranking in `[sources]`.
   - `cli.py` and `__main__.py`: the `dotlife` command.
   - `dashboard/`: the Streamlit app (`make dashboard`). Use the `developing-with-streamlit` skill when changing it, and keep logic out of the page scripts:

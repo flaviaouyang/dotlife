@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,6 +41,8 @@ ANSWER_KEYS = (
     "home_currency",
     "budgets",
     "location",
+    "show_sensitive",
+    "other",
 )
 CUSTOM_AREA = AREAS[-1]
 DIMENSIONS = {
@@ -194,7 +197,8 @@ class Answers:
 
     Attributes:
         timezone: IANA time zone name.
-        period: ``week`` or ``month``.
+        period: Which the dashboard opens on, ``week`` or ``month``. Not asked;
+            set it in config.toml.
         weight: ``kg`` or ``lb``.
         glucose: ``mmol/L`` or ``mg/dL``.
         track: Categories to track, built-in and custom.
@@ -203,6 +207,10 @@ class Answers:
         budgets: Monthly budget per spending category, in the home currency.
         location: Home latitude and longitude for weather, rounded to two
             decimals, or None.
+        show_sensitive: Whether the dashboard shows sensitive categories
+            without being asked.
+        other: The apps, devices or files the person named in their own words
+            that no guide covers, for their agent to work out.
     """
 
     timezone: str
@@ -214,6 +222,8 @@ class Answers:
     home_currency: str = "EUR"
     budgets: Mapping[str, float] = field(default_factory=dict)
     location: tuple[float, float] | None = None
+    show_sensitive: bool = False
+    other: str = ""
 
 
 def local_timezone() -> str | None:
@@ -277,19 +287,9 @@ def current_answers(config: Mapping[str, Any]) -> Answers:
         location=(weather["latitude"], weather["longitude"])
         if {"latitude", "longitude"} <= set(weather := config.get("weather", {}))
         else None,
+        show_sensitive=config.get("dashboard", {}).get("show_sensitive", False),
+        other=config.get("setup", {}).get("other", ""),
     )
-
-
-def slug(name: str) -> str:
-    """Turn a source's name into a lowercase, hyphenated value.
-
-    Args:
-        name: The name, e.g. "Bank of Example".
-
-    Returns:
-        E.g. ``bank-of-example``.
-    """
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
 def parse_budgets(text: str) -> dict[str, float]:
@@ -422,30 +422,20 @@ def source_label(value: str) -> str:
     return SOURCE_LABELS.get(value, value)
 
 
-def ask_basics(prompter: Prompter, current: Answers) -> tuple[str, str]:
-    """Ask for the time zone and the period summaries use.
+def ask_timezone(prompter: Prompter, current: Answers) -> str:
+    """Ask for the time zone.
 
     Args:
         prompter: Asks the questions.
-        current: The answers so far, for defaults.
+        current: The answers so far, for the default.
 
     Returns:
-        The time zone and the period.
+        The time zone.
     """
     prompter.heading("The basics", "Dates and weeks follow your time zone.")
-    timezone = prompter.text(
+    return prompter.text(
         "timezone", "Your time zone", current.timezone, timezone_problem
     )
-    period = prompter.select(
-        "period",
-        "Summarise by",
-        [
-            Option("week", "Week", "Monday to Sunday"),
-            Option("month", "Month", "Calendar months"),
-        ],
-        current.period,
-    )
-    return timezone, period
 
 
 def ask_categories(
@@ -519,8 +509,9 @@ def ask_categories(
     chosen = [name for name in track if name in sensitive]
     if chosen:
         prompter.note(
-            "Sensitive categories stay hidden in the dashboard until you switch on "
-            "Show sensitive, so they don't appear when you share your screen."
+            "Sensitive means private: the kind of thing you wouldn't want on screen "
+            "while someone looks over your shoulder. They are only tracked if you "
+            "say so here."
         )
         kept = prompter.checkbox(
             "sensitive",
@@ -608,7 +599,7 @@ def ask_source_pool(
     current: Answers,
     track: Sequence[str],
     labels: Mapping[str, str],
-) -> list[str]:
+) -> tuple[list[str], str]:
     """Ask which apps and devices the person uses, best first where they overlap.
 
     Args:
@@ -618,12 +609,13 @@ def ask_source_pool(
         labels: Label by category name.
 
     Returns:
-        Their sources, ranked: guides first in the person's order, then others.
+        Their sources, ranked, and what they said in their own words about apps,
+        devices or files no guide covers (empty if nothing).
     """
     prompter.heading(
         "Where your data comes from",
-        "Tick the apps and devices you use. We'll work out what each one fills, "
-        "and you can check it afterwards.",
+        "These are the apps and devices dotlife has a guide for, limited to what "
+        "you chose to track. Tick the ones you use.",
     )
     previous = list(
         dict.fromkeys(value for values in current.sources.values() for value in values)
@@ -633,60 +625,71 @@ def ask_source_pool(
         for guide in GUIDES
         if set(guide.categories) & set(track) and not guide.automatic
     ]
-    picked = prompter.checkbox(
-        "sources",
-        "Which of these do you use?",
-        [
-            Option(
-                guide.slug,
-                guide.label,
-                "Fills "
-                + ", ".join(labels[name] for name in guide.categories if name in track)
-                + ".",
-            )
-            for guide in relevant
-        ],
-        [guide.slug for guide in relevant if guide.slug in previous],
+    picked = (
+        prompter.checkbox(
+            "sources",
+            "Which of these do you use?",
+            [
+                Option(
+                    guide.slug,
+                    guide.label,
+                    "Fills "
+                    + ", ".join(
+                        labels[name] for name in guide.categories if name in track
+                    )
+                    + ".",
+                )
+                for guide in relevant
+            ],
+            [guide.slug for guide in relevant if guide.slug in previous],
+        )
+        if relevant
+        else []
     )
-    known = {*GUIDE_BY_SLUG, FROM_REFLECTIONS, FROM_FINANCES, MANUAL}
-    others = prompter.text(
-        "other_sources",
-        "Anything else, e.g. a bank or another app? Names, separated by commas",
-        ", ".join(value for value in previous if value not in known) or "none",
+    unguided = [
+        labels[name]
+        for name in track
+        if name != DINING_OUT and not any(name in guide.categories for guide in GUIDES)
+    ]
+    if unguided:
+        prompter.note(
+            f"No guide covers {', '.join(unguided)} yet. You can enter those by "
+            "hand, or describe what you use below and your agent will look for a way."
+        )
+    other = prompter.text(
+        "other",
+        "Anything else you use? Apps, devices or files, in your own words, or none",
+        current.other or "none",
         lambda text: None,
-    )
-    extra = (
-        [] if others.strip() == "none" else [slug(name) for name in others.split(",")]
-    )
-    pool = list(dict.fromkeys(picked + [value for value in extra if value]))
-    pool.sort(
-        key=lambda value: previous.index(value) if value in previous else len(previous)
+    ).strip()
+    pool = sorted(
+        picked,
+        key=lambda value: previous.index(value) if value in previous else len(previous),
     )
     overlapping = [
         value
         for value in pool
-        if value in GUIDE_BY_SLUG
-        and any(
-            other != value
-            and other in GUIDE_BY_SLUG
+        if any(
+            other_value != value
             and set(GUIDE_BY_SLUG[value].categories)
-            & set(GUIDE_BY_SLUG[other].categories)
+            & set(GUIDE_BY_SLUG[other_value].categories)
             & set(track)
-            for other in pool
+            for other_value in pool
         )
     ]
-    if len(overlapping) < 2:
-        return pool
-    prompter.note(
-        "Some of these record the same things. When two report the same day, the "
-        "one ranked higher wins."
-    )
-    ranked = prompter.rank(
-        "rank",
-        "Rank them, most trusted first",
-        [Option(value, source_label(value)) for value in overlapping],
-    )
-    return ranked + [value for value in pool if value not in ranked]
+    ranked = pool
+    if len(overlapping) >= 2:
+        prompter.note(
+            "Some of these record the same things. When two report the same day, the "
+            "one ranked higher wins."
+        )
+        ranked = prompter.rank(
+            "rank",
+            "Rank them, most trusted first",
+            [Option(value, source_label(value)) for value in overlapping],
+        )
+        ranked += [value for value in pool if value not in ranked]
+    return ranked, "" if other.lower() == "none" else other
 
 
 def assume_sources(
@@ -694,9 +697,10 @@ def assume_sources(
 ) -> dict[str, tuple[str, ...]]:
     """Work out each category's sources from the person's apps and devices.
 
-    A category keeps its previous sources while they are all still in use. Else it
-    gets every ranked source whose guide fills it; failing that, a source that
-    needs no account (weather); failing that, by hand.
+    A category keeps its previous sources while each is still in use or has no
+    guide (an agent added it). Else it gets every ranked source whose guide fills
+    it; failing that, a source that needs no account (weather); failing that, by
+    hand.
 
     Args:
         track: The categories to track.
@@ -712,13 +716,13 @@ def assume_sources(
         previous = current.sources.get(name, ())
         if name == DINING_OUT:
             sources[name] = (FROM_FINANCES,)
-        elif previous and set(previous) <= usable:
+        elif previous and all(
+            value in usable or value not in GUIDE_BY_SLUG for value in previous
+        ):
             sources[name] = previous
         else:
             covering = tuple(
-                value
-                for value in pool
-                if value in GUIDE_BY_SLUG and name in GUIDE_BY_SLUG[value].categories
+                value for value in pool if name in GUIDE_BY_SLUG[value].categories
             )
             automatic = tuple(
                 guide.slug
@@ -729,103 +733,29 @@ def assume_sources(
     return sources
 
 
-def source_options(
-    name: str, pool: Sequence[str], track: Sequence[str]
-) -> list[Option]:
-    """List the sources a category can come from, for changing it in the review.
-
-    Args:
-        name: The category.
-        pool: The person's sources.
-        track: The categories to track, which decides what can be inferred.
-
-    Returns:
-        The person's sources that fit, other guides that fill it, inference where
-        it applies, and by hand.
-    """
-    fitting = [
-        value
-        for value in pool
-        if value not in GUIDE_BY_SLUG or name in GUIDE_BY_SLUG[value].categories
-    ]
-    guides = [
-        guide.slug
-        for guide in GUIDES
-        if name in guide.categories and guide.slug not in fitting
-    ]
-    inferred = (
-        [FROM_REFLECTIONS]
-        if name in INFERABLE_FROM_REFLECTIONS and "reflections" in track
-        else []
-    )
-    return [
-        Option(value, source_label(value))
-        for value in [*fitting, *guides, *inferred, MANUAL]
-    ]
-
-
-def review_sources(
-    prompter: Prompter,
-    sources: dict[str, tuple[str, ...]],
-    pool: Sequence[str],
-    track: Sequence[str],
-    labels: Mapping[str, str],
-) -> dict[str, tuple[str, ...]]:
-    """Show the assumed sources and let the person change any category.
+def ask_show_sensitive(
+    prompter: Prompter, current: Answers, track: Sequence[str]
+) -> bool:
+    """Ask whether the dashboard shows sensitive categories without being asked.
 
     Args:
         prompter: Asks the questions.
-        sources: The assumed sources by category, best first.
-        pool: The person's sources.
+        current: The answers so far, for the default.
         track: The categories to track.
-        labels: Label by category name.
 
     Returns:
-        The sources once the person says they look right.
+        The person's choice; the current one when nothing sensitive is tracked.
     """
-    sources = dict(sources)
-    while True:
-        prompter.heading(
-            "Check our assumptions",
-            "Here is where we think each category comes from, best first.",
-        )
-        width = max(len(labels[name]) for name in sources) if sources else 0
-        for name, values in sources.items():
-            prompter.say(
-                f"  {labels[name]:<{width}}  "
-                + " > ".join(source_label(value) for value in values)
-            )
-        if any(values == (MANUAL,) for values in sources.values()):
-            prompter.note(
-                "By hand means no source fills it yet: you'd type the values into "
-                "its file, or pick a source here."
-            )
-        changing = prompter.select(
-            "review",
-            "Does this look right?",
-            [Option("ok", "Yes, looks right")]
-            + [
-                Option(name, f"Change {labels[name]}")
-                for name in sources
-                if name != DINING_OUT
-            ],
-            "ok",
-        )
-        if changing == "ok":
-            return sources
-        picked = prompter.checkbox(
-            f"change:{changing}",
-            f"Where does {labels[changing]} come from?",
-            source_options(changing, pool, track),
-            sources[changing],
-        ) or [MANUAL]
-        if len(picked) > 1:
-            picked = prompter.rank(
-                f"order:{changing}",
-                f"Rank the sources for {labels[changing]}, most trusted first",
-                [Option(value, source_label(value)) for value in picked],
-            )
-        sources[changing] = tuple(picked)
+    if not any(
+        category.sensitive and category.name in track for category in CATEGORIES
+    ):
+        return current.show_sensitive
+    return prompter.confirm(
+        "show_sensitive",
+        "Show your sensitive categories on the dashboard by default? (Anyone "
+        "looking at your screen would see them; you can still toggle it there.)",
+        current.show_sensitive,
+    )
 
 
 def ask_answers(
@@ -845,7 +775,7 @@ def ask_answers(
     Returns:
         The new answers.
     """
-    timezone, period = ask_basics(prompter, current)
+    timezone = ask_timezone(prompter, current)
     names = [
         name
         for dimension in AREAS
@@ -853,25 +783,25 @@ def ask_answers(
         if dimension_of(name) == dimension
     ]
     track = ask_categories(prompter, current, names, labels)
+    show_sensitive = ask_show_sensitive(prompter, current, track)
     weight, glucose, currency, budgets, dining, location = ask_details(
         prompter, current, track
     )
     if dining:
         track.append(DINING_OUT)
-    pool = ask_source_pool(prompter, current, track, labels)
-    sources = review_sources(
-        prompter, assume_sources(track, pool, current), pool, track, labels
-    )
+    pool, other = ask_source_pool(prompter, current, track, labels)
     return Answers(
         timezone,
-        period,
+        current.period,
         weight,
         glucose,
         tuple(track),
-        sources,
+        assume_sources(track, pool, current),
         currency,
         budgets,
         location,
+        show_sensitive,
+        other,
     )
 
 
@@ -887,8 +817,7 @@ def summary(answers: Answers, labels: Mapping[str, str]) -> list[str]:
     """
     sources = {value for values in answers.sources.values() for value in values}
     lines = [
-        f"Time zone {answers.timezone}, by {answers.period}, "
-        f"{answers.weight} and {answers.glucose}.",
+        f"Time zone {answers.timezone}, {answers.weight} and {answers.glucose}.",
         f"Tracking {plural(len(answers.track), 'category', 'categories')} from "
         f"{plural(len(sources), 'source')}.",
     ]
@@ -897,21 +826,64 @@ def summary(answers: Answers, labels: Mapping[str, str]) -> list[str]:
             f"Currency {answers.home_currency}; "
             f"budgets {budgets_text(answers.budgets)}."
         )
+    width = max((len(labels.get(name, name)) for name in answers.sources), default=0)
+    lines += [
+        f"{labels.get(name, name):<{width}}  "
+        + " > ".join(source_label(value) for value in values)
+        for name, values in answers.sources.items()
+    ]
+    if any(values == (MANUAL,) for values in answers.sources.values()):
+        lines.append(
+            "By hand means no source fills it yet: you type the values in, or your "
+            "agent finds a source."
+        )
     return lines
 
 
 def next_step() -> str:
-    """Say what to do after the questionnaire, which is the path without an agent.
+    """Say what to do after the questions.
 
     Returns:
         A short paragraph.
     """
     return (
-        "Next, set up your sources: start at docs/sources/README.md, open the guide "
-        "for each source in sources.md, write its script, and list it under "
-        "[[fresh.steps]] in config.toml. Then run make fresh. Tip: an AI coding "
-        "agent can do all of this for you with the setup skill (/setup in Claude "
-        "Code)."
+        "Next, connect your sources. With an AI coding agent, ask it to run the "
+        "setup skill (/setup in Claude Code): it reads your answers and does the "
+        "rest. Without one, start at docs/sources/README.md, open the guide for each "
+        "source in sources.md, write its script, and list it under [[fresh.steps]] "
+        "in config.toml. Then run make fresh."
+    )
+
+
+def finish_setup(config_path: Path) -> str:
+    """Delete the demo ``sample/`` folder, the last step of setting up.
+
+    Args:
+        config_path: config.toml; ``sample/`` is next to it.
+
+    Returns:
+        What was done.
+
+    Raises:
+        ValueError: If the person's data folder has no data yet, since the
+            dashboard would then have nothing to show but the sample.
+    """
+    _, config = load_document(config_path)
+    root = config_path.parent
+    sample = root / "sample"
+    if not sample.is_dir():
+        return "No sample/ folder; nothing to clean up."
+    data = root / config.get("data_dir", "data")
+    if data.resolve() == sample.resolve():
+        raise ValueError("data_dir in config.toml is sample/; point it at your data")
+    if not (any(data.glob("*.csv")) or any(data.glob("reflections/*.txt"))):
+        raise ValueError(
+            f"{data.name}/ has no data yet, so sample/ stays until make fresh has "
+            "filled it"
+        )
+    shutil.rmtree(sample)
+    return (
+        "Deleted sample/. The dashboard now shows your data. It stays in git history."
     )
 
 
@@ -935,6 +907,8 @@ def answers_json(answers: Answers) -> str:
             "home_currency": answers.home_currency,
             "budgets": dict(answers.budgets),
             "location": None if answers.location is None else list(answers.location),
+            "show_sensitive": answers.show_sensitive,
+            "other": answers.other,
         },
         indent=2,
     )
@@ -997,6 +971,10 @@ def answers_from(
     budgets = merged["budgets"]
     if not all(isinstance(amount, int | float) for amount in budgets.values()):
         raise ValueError('budgets must be amounts, e.g. {"groceries": 400}')
+    if not isinstance(merged["show_sensitive"], bool):
+        raise ValueError("show_sensitive must be true or false")
+    if not isinstance(merged["other"], str):
+        raise ValueError("other must be text, in the person's own words")
     location = merged["location"]
     return Answers(
         timezone=merged["timezone"],
@@ -1010,6 +988,8 @@ def answers_from(
         location=None
         if location is None
         else parse_location(", ".join(str(part) for part in location)),
+        show_sensitive=merged["show_sensitive"],
+        other=merged["other"].strip(),
     )
 
 
@@ -1099,6 +1079,10 @@ def apply_answers(document: tomlkit.TOMLDocument, answers: Answers) -> None:
     document["display"]["glucose"] = answers.glucose
     document.setdefault("dashboard", tomlkit.table())
     document["dashboard"]["period"] = answers.period
+    document["dashboard"]["show_sensitive"] = answers.show_sensitive
+    if answers.other or "setup" in document:
+        document.setdefault("setup", tomlkit.table())
+        document["setup"]["other"] = answers.other
     replace_sources(document.setdefault("sources", tomlkit.table()), answers.sources)
     if "finances" in answers.track:
         document.setdefault("finances", tomlkit.table())
@@ -1190,6 +1174,16 @@ def sources_block(answers: Answers, labels: Mapping[str, str]) -> str:
         lines.append(
             f"| {source_label(value)} | {guide_link(value)} | {', '.join(fills)} |"
         )
+    if answers.other:
+        lines += [
+            "",
+            "## In your own words",
+            "",
+            "What you said you use that no guide covers. The `setup` skill works out "
+            "how to read it.",
+            "",
+            *(f"> {line}" for line in answers.other.splitlines()),
+        ]
     lines += ["", "## Which source wins", ""]
     lines += [
         f"- {labels.get(name, name)}: "
@@ -1232,9 +1226,10 @@ def run_setup(config_path: Path, prompter: Prompter) -> int:
     labels = category_labels(config.get("custom", {}))
     prompter.heading(
         "dotlife setup",
-        "A few questions about what you track and where it comes from. Your "
-        "current answers are already selected. Nothing is written until you "
-        "confirm at the end.",
+        "A few plain questions about what you track and the apps you use. Your "
+        "answers are kept for dotlife and for your AI agent, which works out the "
+        "rest. Your current answers are already selected. Nothing is written until "
+        "you confirm at the end.",
     )
     answers = ask_answers(
         prompter, current_answers(config), custom_names(config), labels

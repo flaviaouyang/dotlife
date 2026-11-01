@@ -8,7 +8,7 @@ from pathlib import Path
 
 from dotlife.config import CONFIG_ENV, DATA_ENV, find_data, load_config
 from dotlife.fresh import fresh_steps, run_fresh
-from dotlife.setup import run_answers, run_setup
+from dotlife.setup import finish_setup, run_answers, run_setup
 from dotlife.staging import SOURCES_DIR
 from dotlife.terminal import prompter
 from dotlife.validate import format_json, format_text, validate_folder
@@ -121,13 +121,17 @@ def run_setup_command(args: argparse.Namespace) -> int:
     """Ask the setup questions, or take an agent's answers, and write the files.
 
     Args:
-        args: Parsed arguments: ``config``, ``answers`` and ``print_answers``.
+        args: Parsed arguments: ``config``, ``answers``, ``print_answers`` and
+            ``finish``.
 
     Returns:
         0 when done or cancelled, 2 when config.toml can't be read or the answers
         are wrong.
     """
     try:
+        if args.finish:
+            print(finish_setup(args.config))
+            return EXIT_OK
         if args.answers is not None or args.print_answers:
             print(run_answers(args.config, args.answers))
             return EXIT_OK
@@ -205,6 +209,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--print-answers",
         action="store_true",
         help="print the current answers as JSON, the format --answers reads",
+    )
+    answers.add_argument(
+        "--finish",
+        action="store_true",
+        help="delete the demo sample/ folder, the last step of setting up; "
+        "refused until your data folder has data",
     )
     setup.set_defaults(handler=run_setup_command)
     return parser
