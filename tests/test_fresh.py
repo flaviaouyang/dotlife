@@ -162,8 +162,19 @@ class FreshRunTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("token expired", output)
         self.assertIn("failed (exit code 3)", output)
-        self.assertIn("1 of 2 steps finished; 1 failed: oura.", output)
+        self.assertIn("it has never finished", output)
+        self.assertIn(
+            "1 of 2 steps finished; 1 failed: oura (it has never finished).", output
+        )
         self.assertTrue((self.root / "data" / "mood.csv").is_file())
+
+    def test_a_failed_step_says_when_its_rows_are_from(self):
+        """After a good run, a failure names the time of the rows still in use."""
+        self.run_fresh({"mood": WRITE_MOOD})
+        code, output = self.run_fresh({"mood": FAIL})
+        self.assertEqual(code, 1)
+        self.assertRegex(output, r"failed \(exit code 3\); its rows are from \d{4}-")
+        self.assertRegex(output, r"1 failed: mood \(its rows are from \d{4}-")
 
     def test_agent_steps_are_listed_not_run(self):
         """A step for the agent is named in the summary and isn't a failure."""

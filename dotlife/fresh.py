@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from dotlife.staging import merge
 from dotlife.validate import Report, format_text, validate_folder
 
 LOG_FILE = Path(".dotlife") / "fresh.log"
+GOOD_RUNS_FILE = Path(".dotlife") / "good_runs.json"
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,15 +45,48 @@ class Outcome:
     Attributes:
         step: The step.
         exit_code: Its exit code; 0 means it finished.
+        last_good: When the step last finished, as ``YYYY-MM-DD HH:MM``; None if
+            it never has.
     """
 
     step: Step
     exit_code: int
+    last_good: str | None = None
 
     @property
     def ok(self) -> bool:
         """Whether the step finished without failing."""
         return self.exit_code == 0
+
+
+def last_good_text(last_good: str | None) -> str:
+    """Say how fresh a failed step's rows are.
+
+    Args:
+        last_good: When it last finished, or None.
+
+    Returns:
+        E.g. "its rows are from 2026-10-29 08:00", or "it has never finished".
+    """
+    if last_good is None:
+        return "it has never finished"
+    return f"its rows are from {last_good}"
+
+
+def load_good_runs(path: Path) -> dict[str, str]:
+    """Read when each step last finished.
+
+    Args:
+        path: The good-runs file.
+
+    Returns:
+        Time by step name; empty if the file is missing or unreadable.
+    """
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return loaded if isinstance(loaded, dict) else {}
 
 
 def parse_step(entry: Mapping[str, Any], index: int) -> Step:
@@ -160,10 +195,13 @@ def summary(outcomes: Sequence[Outcome], report: Report) -> str:
     """
     ran = [outcome for outcome in outcomes if not outcome.step.needs_agent]
     left = [outcome.step.name for outcome in outcomes if outcome.step.needs_agent]
-    failed = [outcome.step.name for outcome in ran if not outcome.ok]
+    failed = [outcome for outcome in ran if not outcome.ok]
     steps = f"{len(ran) - len(failed)} of {len(ran)} steps finished"
     if failed:
-        steps += f"; {len(failed)} failed: {', '.join(failed)}"
+        steps += f"; {len(failed)} failed: " + ", ".join(
+            f"{outcome.step.name} ({last_good_text(outcome.last_good)})"
+            for outcome in failed
+        )
     if left:
         steps += f"; {len(left)} for your agent's fetch skill: {', '.join(left)}"
     errors = report.error_count
@@ -208,9 +246,12 @@ def run_fresh(
     env = os.environ | {CONFIG_ENV: str(config_path.resolve()), DATA_ENV: str(data)}
     log_path = root / LOG_FILE
     log_path.parent.mkdir(exist_ok=True)
+    good_path = root / GOOD_RUNS_FILE
+    good_runs = load_good_runs(good_path)
     outcomes = []
     with log_path.open("w", encoding="utf-8") as log:
-        log.write(f"dotlife fresh, {datetime.now():%Y-%m-%d %H:%M}\n")
+        started = f"{datetime.now():%Y-%m-%d %H:%M}"
+        log.write(f"dotlife fresh, {started}\n")
         for step in steps:
             print(f"{step.name}:")
             if step.needs_agent:
@@ -224,9 +265,16 @@ def run_fresh(
                 continue
             log.write(f"\n== {step.name}: {' '.join(step.argv)}\n")
             outcome = run_step(step, root, env, log)
-            if not outcome.ok:
-                print(f"  failed (exit code {outcome.exit_code})")
-                log.write(f"failed (exit code {outcome.exit_code})\n")
+            if outcome.ok:
+                good_runs[step.name] = started
+            else:
+                outcome = Outcome(step, outcome.exit_code, good_runs.get(step.name))
+                note = (
+                    f"failed (exit code {outcome.exit_code}); "
+                    f"{last_good_text(outcome.last_good)}"
+                )
+                print(f"  {note}")
+                log.write(f"{note}\n")
             outcomes.append(outcome)
             merge_staged(data, config)
         merged = merge_staged(data, config)
@@ -241,6 +289,7 @@ def run_fresh(
         text = format_text(report)
         line = summary(outcomes, report)
         log.write(f"\n{text}\n{line}\n")
+    good_path.write_text(json.dumps(good_runs, indent=2), encoding="utf-8")
     print(f"\n{text}\n{line}\nLog: {LOG_FILE}")
     return (
         0 if all(outcome.ok for outcome in outcomes) and not report.error_count else 1
