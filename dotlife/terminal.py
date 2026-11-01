@@ -70,6 +70,10 @@ class Style:
         """Return the text in the accent colour, for the cursor and answers."""
         return self.wrap(text, "36")
 
+    def hint(self, text: str) -> str:
+        """Return the text in magenta, for what the highlighted choice means."""
+        return self.wrap(text, "35")
+
     def good(self, text: str) -> str:
         """Return the text in green."""
         return self.wrap(text, "32")
@@ -95,6 +99,9 @@ def wants_color(stream: TextIO) -> bool:
     return stream.isatty() and "NO_COLOR" not in os.environ
 
 
+NEXT = Option("next", "Next", "Done picking; move on to the next part.")
+
+
 @dataclass(slots=True)
 class Menu:
     """The state of an arrow-key menu, separate from the terminal so it can be tested.
@@ -113,6 +120,11 @@ class Menu:
     ticked: set[str] = field(default_factory=set)
     holding: bool = False
 
+    @property
+    def rows(self) -> list[Option]:
+        """What is drawn: the options, and for checkboxes a last row, Next."""
+        return [*self.options, NEXT] if self.kind is Kind.CHECKBOX else self.options
+
     def handle(self, key: str) -> bool:
         """Apply one key press.
 
@@ -122,7 +134,7 @@ class Menu:
         Returns:
             True when the menu is finished.
         """
-        last = len(self.options) - 1
+        last = len(self.rows) - 1
         if key in ("up", "k", "down", "j"):
             step = -1 if key in ("up", "k") else 1
             target = min(max(self.cursor + step, 0), last)
@@ -132,6 +144,11 @@ class Menu:
                     self.options[self.cursor],
                 )
             self.cursor = target
+            return False
+        if self.kind is Kind.CHECKBOX and key in ("enter", "space"):
+            if self.cursor == last:
+                return key == "enter"
+            self.toggle()
             return False
         if key == "space":
             self.toggle()
@@ -163,7 +180,7 @@ class Menu:
 
 HELP = {
     Kind.SELECT: "up/down to move, enter to choose",
-    Kind.CHECKBOX: "up/down to move, space to tick, a for all, enter when done",
+    Kind.CHECKBOX: "up/down to move, enter to tick, a for all, choose Next when done",
     Kind.RANK: "up/down to move, space to pick up or put down, enter when done",
 }
 
@@ -203,13 +220,16 @@ def render(menu: Menu, question: str, style: Style, width: int = 80) -> list[str
         width: The terminal's width; longer lines are cut.
 
     Returns:
-        The lines, ending with the highlighted choice's hint and the keys to use.
+        The lines, ending with the highlighted choice's hint in its own colour, then
+        the keys to use, dimmed.
     """
     lines = [style.bold(fit(question, width - 1))]
-    for index, option in enumerate(menu.options):
+    for index, option in enumerate(menu.rows):
         here = index == menu.cursor
         pointer = style.accent(">") if here else " "
-        if menu.kind is Kind.CHECKBOX:
+        if menu.kind is Kind.CHECKBOX and option is NEXT:
+            mark = "    "
+        elif menu.kind is Kind.CHECKBOX:
             box = style.good("[x]") if option.value in menu.ticked else "[ ]"
             mark = f"{box} "
         elif menu.kind is Kind.RANK:
@@ -223,9 +243,9 @@ def render(menu: Menu, question: str, style: Style, width: int = 80) -> list[str
         if here:
             label = style.accent(label)
         lines.append(f"{pointer} {mark}{label}")
-    hint = fit(menu.options[menu.cursor].hint, width - 3)
+    hint = fit(menu.rows[menu.cursor].hint, width - 3)
     keys = fit(HELP[menu.kind], width - 3)
-    lines += [style.dim(f"  {hint}") if hint else "", style.dim(f"  {keys}")]
+    lines += [style.hint(f"  {hint}") if hint else "", "", style.dim(f"  {keys}")]
     return lines
 
 

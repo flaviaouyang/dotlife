@@ -35,12 +35,22 @@ class MenuTest(unittest.TestCase):
     def test_checkbox(self):
         """Space ticks and unticks; a ticks all, then none; the order is kept."""
         menu = Menu(Kind.CHECKBOX, list(FRUIT))
-        press(menu, "down", "down", "space", "up", "up", "space")
+        press(menu, "down", "down", "enter", "up", "up", "enter")
         self.assertEqual(menu.result, ["apple", "fig"])
+        press(menu, "space", "space")
         press(menu, "a")
         self.assertEqual(menu.result, ["apple", "pear", "fig"])
         press(menu, "a")
         self.assertEqual(menu.result, [])
+
+    def test_checkbox_finishes_on_next(self):
+        """Enter ticks an option and only finishes on the Next row below them."""
+        menu = Menu(Kind.CHECKBOX, list(FRUIT))
+        self.assertFalse(press(menu, "enter"))
+        self.assertFalse(press(menu, "down", "down", "down", "space"))
+        self.assertTrue(press(menu, "enter"))
+        self.assertEqual(menu.result, ["apple"])
+        self.assertFalse(press(menu, "down"))
 
     def test_rank(self):
         """Space picks an item up, arrows carry it, space puts it down."""
@@ -54,10 +64,12 @@ class MenuTest(unittest.TestCase):
         menu = Menu(Kind.CHECKBOX, list(FRUIT), ticked={"pear"})
         lines = render(menu, "Which fruit?", Style(color=False))
         self.assertEqual(
-            lines[:4], ["Which fruit?", "> [ ] Apple", "  [x] Pear", "  [ ] Fig"]
+            lines[:5],
+            ["Which fruit?", "> [ ] Apple", "  [x] Pear", "  [ ] Fig", "      Next"],
         )
-        self.assertEqual(lines[4], "  Red or green")
-        self.assertIn("space to tick", lines[5])
+        self.assertEqual(lines[5], "  Red or green")
+        self.assertEqual(lines[6], "")
+        self.assertIn("choose Next", lines[7])
 
 
 def typed(*answers: str) -> Iterator[str]:
