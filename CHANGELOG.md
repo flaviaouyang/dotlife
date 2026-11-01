@@ -2,6 +2,25 @@
 
 What changed in each release of dotlife, for the people who use it. While dotlife is in alpha, anything can still change between releases.
 
+## [0.1.0-alpha.10](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.10) - 1 November 2026
+
+[All changes since 0.1.0-alpha.9](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.9...v0.1.0-alpha.10)
+
+### ✨ New
+
+- Tick menu options with enter, move on with Next, and colour the hints
+- Say when a failed step's rows are from
+- Ask plain setup questions for the agent to interpret, and add setup --finish
+
+### 🐛 Fixed
+
+- Correct metadata key references for typed-in values and VO2 max in Apple Health documentation
+
+### 📖 Docs
+
+- Update README for clarity and accuracy in project description
+- Prefer the most automatic route, and keep agents off permissions
+
 ## [0.1.0-alpha.9](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.9) - 30 October 2026
 
 [All changes since 0.1.0-alpha.8](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.8...v0.1.0-alpha.9)
