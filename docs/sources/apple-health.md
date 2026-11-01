@@ -54,9 +54,13 @@ Type names are the `type` attribute of a `Record` in `export.xml`. They match th
 
 ## Getting the data out
 
-HealthKit has no web or cloud API. "The user's device stores all HealthKit data locally", and the store is encrypted while the device is locked ([Protecting user privacy](https://developer.apple.com/documentation/healthkit/protecting-user-privacy)). iPhone, Apple Watch, Vision Pro and iPad (iPadOS 17 and later) each keep their own store and sync it; a Mac has no store of its own ([About the HealthKit framework](https://developer.apple.com/documentation/healthkit/about-the-healthkit-framework)). Every way out therefore starts on the iPhone.
+HealthKit has no web or cloud API. "The user's device stores all HealthKit data locally", and the store is encrypted while the device is locked ([Protecting user privacy](https://developer.apple.com/documentation/healthkit/protecting-user-privacy)). iPhone, Apple Watch, Vision Pro and iPad (iPadOS 17 and later) each keep their own store and sync it; a Mac has no store of its own ([About the HealthKit framework](https://developer.apple.com/documentation/healthkit/about-the-healthkit-framework)). Every way out therefore starts on the iPhone. The routes are listed from the most automatic down; see [Choosing a route](README.md#choosing-a-route).
 
-### 1. Export All Health Data (best for a script)
+### 1. A HealthKit export app (scheduled, no repeated steps)
+
+Only an app on the iPhone can read HealthKit. Third-party apps exist that export to files on a schedule, for example [Health Auto Export](https://apps.apple.com/app/id1115567069) (CSV, JSON; automatic exports to iCloud Drive, Dropbox, a REST API and others in its paid tier). Its help says it also exports State of Mind (iOS 18 and later) and Medications (iOS 26 and later) ([Health Auto Export help](https://help.healthyapps.dev/en/health-auto-export/manual-export/)). This is the route to try first, because it needs nothing from the person after the first setup. It is a third party and its output format is its own, so map from its docs, not from this guide, and name it in `sources.md` before sending data through it. If the person won't install or pay for an app, use the manual export below.
+
+### 2. Export All Health Data (by hand, every time)
 
 Steps, from Apple's iPhone User Guide ([Share your data in Health on iPhone](https://support.apple.com/guide/iphone/share-your-health-data-iph5ede58c3d/ios)):
 
@@ -76,11 +80,7 @@ Apple says only that it exports "all of your health and fitness data" in XML. Th
 
 Parsing: `export.xml` is large (one person's 5.5 MB zip expanded to 109 MB in 2016, [TDDA](https://www.tdda.info/in-defence-of-xml-exporting-and-analysing-apple-health-data); years of watch data are far larger). Stream it: in Python, `xml.etree.ElementTree.iterparse` (or `XMLPullParser`) on `start` and `end` events, because the tree is "not freed incrementally" otherwise ([Python docs](https://docs.python.org/3/library/xml.etree.elementtree.html)). Track the depth: handle a `Record` or `Workout` only when it is a direct child of `HealthData` (records inside a `Correlation` repeat top-level ones, see "Watch out for"), then clear the root (`root.clear()`, with `root` taken from the first `start` event), since clearing only the element leaves the root holding every emptied child. Read `export.xml` straight from the zip without extracting it. Group records by `type` and keep only the types in the table above.
 
-What it needs: an iPhone with Health. Limits: it is manual and all-or-nothing (no date range), so each sync means a new full export. A script should re-read the whole file and stage every row again, with no window.
-
-### 2. A HealthKit export app (for scheduled exports)
-
-Only an app on the iPhone can read HealthKit. Third-party apps exist that export to files on a schedule, for example [Health Auto Export](https://apps.apple.com/app/id1115567069) (CSV, JSON; automatic exports to iCloud Drive, Dropbox, a REST API and others in its paid tier). Its help says it also exports State of Mind (iOS 18 and later) and Medications (iOS 26 and later) ([Health Auto Export help](https://help.healthyapps.dev/en/health-auto-export/manual-export/)). This is an option, not a recommendation: it is a third party, and its output format is its own, so map from its docs, not from this guide. Name it in `sources.md` before sending data through it.
+What it needs: an iPhone with Health. Limits: it is manual, so the person repeats it before every refresh, and all-or-nothing (no date range), so each sync means a new full export. A script should re-read the whole file and stage every row again, with no window.
 
 ### 3. Shortcuts
 
@@ -94,7 +94,7 @@ The Claude iOS app can read Apple Health (activity, workouts, vitals, body measu
 
 Settle these with the person before writing the script, and write the answers in `sources.md` under an "Apple Health" heading. The ones the script reads go under `[apple-health]` in `config.toml`, e.g. `export = "inbox/export.zip"`, `sleep_gap_min = 60` and `apps = { "Health Mate" = "withings" }` (each app's `sourceName` and the `source` value written for it).
 
-- **Where the export goes.** `inbox/export.zip` in the repo by default; git ignores `inbox/`. For another place (e.g. an iCloud Drive folder), set `export = "<path>"` under `[apple-health]` in `config.toml`. Each time they want fresh data, they export again and replace the file.
+- **Where the export goes.** `inbox/export.zip` in the repo by default; git ignores `inbox/`. For another place (e.g. an iCloud Drive folder), set `export = "<path>"` under `[apple-health]` in `config.toml`. With the manual export, each time they want fresh data they export again and replace the file; say so in `sources.md`.
 - **Which devices, and which covers the whole day.** Ask what they carry and wear; don't assume a watch. With only an iPhone, the iPhone is the source for everything it records. With an Apple Watch too, the usual answer is the watch first and the phone only on a date the watch has nothing for that category: steps, distance and floors, but also sleep (the phone writes an in-bed sample each night) and the others. A row names one device, so the choice is per date and category, not per column. When the phone fills in for the watch, set `fallback_sources = ["iphone"]` under `[activity]` in `config.toml`: those days stay in the file but out of averages, since the phone only counts what happens while it is carried.
 - **Other apps' data.** Health also holds what other apps write to it, such as a smart scale's app writing weight. Decide per type whether to use it and which wins, e.g. the scale over weight typed into Health. This ranking happens inside the Apple Health script, because to dotlife it is all one source, `apple-health`.
 - **The sleep gap.** How long a break between sleep samples can be and still count as one night. An hour suits most people.

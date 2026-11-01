@@ -7,50 +7,52 @@ description: Set up a dotlife repo for its owner. Work out what they track and w
 
 At the end of this skill the person has:
 
-- `config.toml` with `track`, `[sources]` and their settings, written by `dotlife setup --answers`.
+- `config.toml` with `track`, `[sources]` and their settings, from `dotlife setup`.
 - `sources.md` saying, in plain words, where each kind of data comes from and every choice the guides left to them.
 - One script per source in `scripts/`, listed under `[[fresh.steps]]` in `config.toml`.
 - A first `make fresh` that finishes, with the validator's findings explained to them.
 - No `sample/` folder.
 
-Read `AGENTS.md`, `FORMAT.md` and `docs/sources/README.md` before you start. Their rules hold throughout: missing data stays missing, scripts over AI, sensitive categories only with consent, and the person's data stays in this repo.
+Read `AGENTS.md`, `FORMAT.md` and `docs/sources/README.md` before you start. Their rules hold throughout: missing data stays missing, scripts over AI, the most automatic route, sensitive categories only with consent, and the person's data stays in this repo.
 
-## 1. Check where things stand
+## 1. Get their answers
 
-Run `uv run dotlife setup --print-answers`. If `track` is already filled in, the repo has been set up before. Ask whether they want to start over or change one thing; for one thing, use the maintain skill.
+The person answers a fixed set of plain questions first, in `dotlife setup`. You don't ask them again what to track, which apps they use or what "sensitive" means; the questions show the supported apps and what each fills.
 
-## 2. Find out what they use
+Run `uv run dotlife setup --print-answers`. If `track` is empty, setup hasn't been done: tell them to run `make setup` themselves (in this session: `! make setup`), since it is a menu you can't drive, and wait. Don't answer the questions for them. If `track` is filled in, the repo was set up before: ask whether they want to start over or change one thing; for one thing, use the maintain skill.
 
-Start from what you already know about the person: their memory with you, this conversation, files they point you to. Then ask, in one round, only what you can't assume:
+Then read `sources.md`: the setup block lists the sources, which source wins, and under "In your own words" anything they said that no guide covers.
 
-- Phone, watch, ring, smart scale and the apps that go with them.
-- Where they write things down: a journal app, daily notes, a calendar for time use.
-- Anything else they want to see, e.g. reading, habits, a custom number like guitar practice.
-- Their time zone, if this computer's may be wrong. Before the first setup, `--print-answers` shows this computer's zone, not the one in the template's `config.toml`.
+## 2. Understand what they said
 
-Always ask before tracking a sensitive category: reflections, cycle, medication, symptoms, glucose, finances, social, travel. Never assume one in.
+From their answers, your memory of them and the guides, work out what's left:
 
-## 3. Propose the plan
+- **Their own words.** Each app, device or file they named: does a guide cover it (`docs/sources/README.md`)? If not, find out how its data can be read, from its own documentation, and say there is no guide yet.
+- **Categories with no source** (listed as "By hand" in the plan). Ask only about these, once: is there an app or file that holds it? Don't list the categories again.
+- **Details only they know**, e.g. which jrnl journal, which calendar. Look up what you can (config files, `jrnl --list`) before asking.
 
-Show a table of category, source (best first) and the guide it follows, then what nothing covers. Build it from these rules:
+Ask in one round, in plain words, with examples. Never make them name categories or products from memory.
 
-- Sources are the slugs in `docs/sources/README.md`'s guides (`apple-health`, `oura`, `jrnl`, `open-meteo` and so on), `manual` for entries made by hand, and `inferred-reflections` or `inferred-finances` for inference (`docs/sources/inference.md`). A source without a guide gets a new lowercase-hyphenated slug; say that it has no guide yet and that you will work out its mapping from its own documentation.
-- Order matters: for each date, `make fresh` keeps the rows of the first listed source that has data that day. Put the most complete source first. For weight, a smart scale goes first when it is a source of its own; when it writes into another source (e.g. through Apple Health), that source's script ranks it, following the guide's choices. Inferred sources always go last.
-- Weather comes from `open-meteo` with no account, for a home location rounded to two decimals.
+## 3. Check the plan
+
+Show the table `dotlife setup` assumed (category, source best first, guide), with your changes from step 2 marked, and what nothing covers. Rules for changing it:
+
+- Sources are the slugs in `docs/sources/README.md`'s guides (`apple-health`, `oura`, `jrnl`, `open-meteo` and so on), `manual` for entries made by hand, and `inferred-reflections` or `inferred-finances` for inference (`docs/sources/inference.md`). A source without a guide gets a new lowercase-hyphenated slug.
+- Order matters: for each date, `make fresh` keeps the rows of the first listed source that has data that day. Put the most complete source first. Inferred sources always go last, after `manual`.
+- A rule you can write as a script (a tag such as `@learn`, a regular pattern) is a script. Only reading free text needs an `agent` step.
 - Leave out categories with no source rather than listing `manual` for them, unless they will really enter values by hand.
-- Also settle the details: week or month, kg or lb, mmol/L or mg/dL, and for finances the home currency and monthly budgets.
 
-Wait for a clear yes. Change the plan as often as they like.
+Wait for a clear yes.
 
-## 4. Record the plan
+## 4. Record changes
 
-Write the answers as JSON to a temporary file outside the repo, in the format `--print-answers` shows, then run:
+If the plan changed, write only the changed answers as JSON to a temporary file outside the repo, in the format `--print-answers` shows (`sources` replaces the whole table, so send all of it), then run:
 
 ```sh
 uv run dotlife setup --answers <file>
 ```
 
-It checks the answers and writes `config.toml` and the top of `sources.md`. Fix whatever it rejects and run it again. Delete the temporary file. Never edit `track` or `[sources]` in `config.toml` by hand.
+Fix whatever it rejects, then delete the file. Never edit `track` or `[sources]` in `config.toml` by hand. Their dashboard choice (`show_sensitive`) is theirs from the questions; change it only if they ask.
 
 ## 5. Settle each source's choices
 
@@ -65,7 +67,7 @@ A source's settings that a script needs (a file path, a location) go in `config.
 
 If a device only fills the days the main one missed (a phone on days without the watch), list its `source` value in `fallback_sources` under `[activity]`, so those part-day rows stay out of averages. Never when it is their only device.
 
-If the source needs an export or a token the person doesn't have yet, walk them through getting it now, following the guide.
+Pick the route as `docs/sources/README.md` ("Choosing a route") says: the most automatic one that can work for them. A step they repeat before every refresh is the last resort; a one-time step (signing in, installing an app) is fine. If the source needs an export or a token the person doesn't have yet, walk them through getting it now, following the guide.
 
 ## 6. Write the scripts
 
@@ -104,7 +106,8 @@ if __name__ == "__main__":
 - Round sums to a sensible precision (whole steps, minutes and metres) so floats don't leave long tails.
 - A source read in full (an export) stages every row each run. An API re-fetches a recent window and passes `window=(first, last)`; on the first run, it fetches from the start date the person chose.
 - A large file is streamed, never loaded whole.
-- A source waiting on the person (no export yet, or the same one as last time) prints what to do and returns 0. When something must be fixed or done first (an unreadable file, an unknown unit, a missing or expired sign-in), print what in plain words and return 1.
+- A source waiting on the person (no export yet, or the same one as last time) prints what to do and returns 0. When something must be fixed or done first (an unreadable file, an unknown unit, a missing or expired sign-in, a permission not granted), print what in plain words and return 1. Never stage a placeholder or an empty file to look finished, and never return 0 when the source could not be read.
+- Never change the computer's privacy permissions (no `tccutil`), and never build, sign or install an app to get a permission prompt. Test a script that depends on a permission only in the person's own terminal; your shell has a different identity, so success there proves nothing. If one try there fails, don't try variants: use the next route down in the guide and note why in `sources.md`.
 - Write it plainly, with a docstring per function, so the person or the maintain skill can follow it later.
 
 Add each script to the end of `config.toml`, sources first and any inference rule after the source it reads:
@@ -128,7 +131,7 @@ Run `make fresh`. Read the whole output, and `.dotlife/fresh.log` if it is long.
 
 ## 8. Finish
 
-- Delete `sample/`: the dashboard now reads `data/`. It stays in git history.
-- Tell them how to refresh from now on: `make fresh`, plus any manual step a source needs (e.g. a new Apple Health export into `inbox/` first), and that the fetch skill does agent steps.
+- Tell them how to refresh from now on: `make fresh`, plus any step a source needs each time (e.g. a new export into `inbox/`), and that the fetch skill does agent steps.
 - Suggest `make dashboard` to see it.
 - Don't commit. Show what changed (`git status`) and let them commit it.
+- Last, clean up: run `uv run dotlife setup --finish`. It deletes `sample/` (it stays in git history) and refuses until `data/` has data; if it refuses, finish step 7 first. Don't skip it or leave `sample/` for later.

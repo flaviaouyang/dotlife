@@ -110,7 +110,8 @@ Social and travel are sensitive categories. Ask before switching either on in `c
 ## Watch out for
 
 - **Write-only access returns nothing.** A script granted only "add events" sees one virtual calendar and no events. Switch it to full access in Privacy & Security.
-- **Different launcher, different grant.** Running the same script from another terminal or an AI desktop app may prompt again or fail (community report above).
+- **Different launcher, different grant.** Running the same script from another terminal or an AI desktop app may prompt again or fail (community report above). Seen in two agent-assisted setups on one Mac (2026-10-31): the person's terminal (Ghostty) had Full Access in System Settings, yet `swift scripts/<script>.swift` failed with "full calendar access not granted", and a compiled app-bundle helper failed with authorization status `0` ("not determined": no decision was ever recorded, so no prompt appeared) however it was launched. What fixed it in one of them is not recorded, so treat none of these as a known fix.
+- **Don't fight the permission.** Test only from the person's own terminal; an agent's shell has a different identity and its success proves nothing. Never reset the person's privacy permissions (`tccutil`), and never build or sign a helper app to get a prompt. If one attempt from their terminal fails, use the `.ics` route below and say in `sources.md` that they export before each refresh.
 - **Four-year cap.** A single EventKit query longer than four years is silently cut short.
 - **Duplicated calendars.** The same calendar can appear twice, e.g. a Google account added to Calendar and also synced by the Google guide. Count each calendar from one source only, as ranked in `sources.md`.
 - **Plans, not records.** A calendar shows what was planned. Past events that didn't happen stay unless the person deletes them.
