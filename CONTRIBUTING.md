@@ -6,7 +6,7 @@ dotlife is a small, open-source life dashboard. Its core is a plain-file data fo
 
 ## Layout
 
-The project is early, so most of these don't exist yet. All project code lives in the `dotlife/` package. The repo root holds the user's files and the docs.
+All project code lives in the `dotlife/` package. The repo root holds the user's files and the docs.
 
 - `FORMAT.md`: the data format spec. Its per-category tables are generated from `dotlife/categories.py` by `make docs`, so change the specs, not the tables. A test fails when the file is out of date.
 - `config.toml`: every number and threshold. Code reads it and never hard-codes a value.
@@ -55,6 +55,27 @@ The project is early, so most of these don't exist yet. All project code lives i
 - `make check` runs what CI runs (lint, formatting and pyright type checks) without changing files. GitHub Actions also runs `make test` on Python 3.11 to 3.14, on Ubuntu (`.github/workflows/ci.yml`).
 - `make format` runs ruff and pymarkdown. Ruff enforces the docstring and import rules (see `pyproject.toml`). Write Markdown with blank lines around headings and lists, one paragraph per line.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Keep them small, with formatting changes in their own commit.
+
+## Adding a source guide
+
+A guide covers one source in `docs/sources/`. People follow it by hand, and the `setup` skill writes a script from it, so it has to be exact for both. Copy the shape of an existing one: [oura.md](docs/sources/oura.md) for an API, [jrnl.md](docs/sources/jrnl.md) for local files.
+
+- **Opening paragraph**: what the source is and which data files it can fill.
+- **What it fills**: a table from each dotlife column to the source's field, with units and conversions.
+- **Getting the data out**: every route, the most automatic first (see "Choosing a route" in `docs/sources/README.md`), each saying what the person does once and what a script does on every run. Connectors in AI tools come last, for backfills.
+- **Choices to make**, if the source leaves any: what the person settles before a script is written, and where the answer goes (`sources.md`, or a `[<source>]` table in `config.toml`).
+- **Mapping to the format**: local dates (sleep on the wake date), units, the window a script re-fetches, and staging rows under the source's name in `[sources]`.
+- **Watch out for** and **Not in the format**: known traps, and data dotlife has no column for.
+- **Sources**: the source's own documentation for every claim, then `Checked YYYY-MM-DD.` Mark anything you couldn't confirm as unverified.
+
+Then wire it in:
+
+- Add a `Guide` to `GUIDES` in `dotlife/setup.py` (its `[sources]` name, label and categories), so `dotlife setup` offers it.
+- Add a row to the tables in `docs/sources/README.md` and `README.md`. A test checks that every guide in `GUIDES` exists and is in the index.
+- If the source needs a column the format lacks, change `dotlife/categories.py` and run `make docs`, in its own commit.
+- Try it on a made-up export, never your own data.
+
+Commit it as `docs: add the <source> guide`, so it shows in the changelog.
 
 ## Releases
 
