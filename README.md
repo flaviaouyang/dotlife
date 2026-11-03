@@ -18,7 +18,7 @@
 </div>
 
 > [!NOTE]
-> **Alpha.** Everything described here works, but so far it has been tried on made-up data, not yet on many people's real exports. Expect rough edges and changes between releases; [CHANGELOG.md](CHANGELOG.md) lists what changed.
+> **Beta.** Everything described here works and has been tried with several AI agents, but not yet on many people's real exports. Expect rough edges and some changes between releases; [CHANGELOG.md](CHANGELOG.md) lists what changed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/overview-dark.png">

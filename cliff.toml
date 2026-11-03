@@ -5,7 +5,7 @@
 header = """
 # Changelog
 
-What changed in each release of dotlife, for the people who use it. While dotlife is in alpha, anything can still change between releases.
+What changed in each release of dotlife, for the people who use it. While dotlife is in beta, things can still change between releases.
 """
 # Starts with a blank line so releases are separated. Breaking changes come first,
 # then the groups in the order their HTML comments set.
