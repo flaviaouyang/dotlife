@@ -117,7 +117,11 @@ Each source has a guide in [docs/sources/](docs/sources/README.md), checked agai
 
 ## Quick start
 
+You need [git](https://git-scm.com), [uv](https://docs.astral.sh/uv/getting-started/installation/) and `make` (on a Mac, `xcode-select --install` adds git and make). uv installs the right Python for you.
+
 ```sh
+git clone https://github.com/flaviaouyang/dotlife.git
+cd dotlife
 make install     # or: uv sync
 make validate    # or: uv run dotlife validate
 make dashboard   # or: uv run dotlife dashboard
@@ -135,7 +139,7 @@ Either way, `make fresh` brings in new data from then on, with no AI involved. I
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The most useful contributions are guides for new data sources (Garmin, Withings, Strava, a bank), and fixes to existing guides when a source changes. Never include your own data in an issue or pull request.
+See [CONTRIBUTING.md](CONTRIBUTING.md). The most useful contributions are guides for new data sources (Garmin, Withings, Strava, a bank; see [Adding a source guide](CONTRIBUTING.md#adding-a-source-guide)), and fixes to existing guides when a source changes. Never include your own data in an issue or pull request.
 
 ## License
 
@@ -143,4 +147,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). The most useful contributions are guides
 
 ---
 
-Created by [Flavia Ouyang](https://www.flaviaouyang.com).
+Created by [Flavia Ouyang](https://www.flaviaouyang.com). If dotlife is useful to you, you can [buy me a coffee](https://buymeacoffee.com/flaviaouyang).
