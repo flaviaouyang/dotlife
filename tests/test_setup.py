@@ -11,6 +11,7 @@ from typing import Any
 from dotlife.config import all_categories, context_for
 from dotlife.setup import (
     FROM_REFLECTIONS,
+    GUIDES,
     SOURCES_END,
     SOURCES_START,
     finish_setup,
@@ -153,6 +154,15 @@ class SetupTest(unittest.TestCase):
         )
         self.assertEqual(run_setup(self.config, fake), 0)
         return fake
+
+    def test_every_guide_exists_and_is_listed(self):
+        """Each source setup offers has its guide, linked from the index."""
+        guides = ROOT / "docs" / "sources"
+        index = (guides / "README.md").read_text(encoding="utf-8")
+        for guide in GUIDES:
+            with self.subTest(guide=guide.slug):
+                self.assertTrue((guides / guide.file).is_file())
+                self.assertIn(f"]({guide.file})", index)
 
     def test_first_run_assumes_sources_and_writes(self):
         """Sources are assumed from the apps picked and ranked; the rest is kept."""
