@@ -1,6 +1,15 @@
 # Changelog
 
-What changed in each release of dotlife, for the people who use it. While dotlife is in alpha, anything can still change between releases.
+What changed in each release of dotlife, for the people who use it. While dotlife is in beta, things can still change between releases.
+
+## [0.1.0-beta.1](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-beta.1) - 3 November 2026
+
+[All changes since 0.1.0-alpha.10](https://github.com/flaviaouyang/dotlife/compare/v0.1.0-alpha.10...v0.1.0-beta.1)
+
+### 📖 Docs
+
+- Add prerequisites and a clone step to the quick start, and a coffee link
+- Call dotlife a beta
 
 ## [0.1.0-alpha.10](https://github.com/flaviaouyang/dotlife/releases/tag/v0.1.0-alpha.10) - 1 November 2026
 
